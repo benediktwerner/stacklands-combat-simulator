@@ -3,5 +3,17 @@ name = "stacklands-combat-simulator"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true
+
 [dependencies]
+getrandom = { version = "*", features = ["js"] }
 rand = { version = "0.8", features = ["small_rng"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+serde = { version = "1", features = ["derive"] }
+tsify = "0.3"
