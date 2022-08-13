@@ -30,6 +30,8 @@
   let results: StatsWithSetup[] = [];
   let resultsWidget: Results | undefined;
 
+  let terminateWorkerTimeout: ReturnType<typeof setTimeout> | null = null;
+
   const addResult = (result?: StatsWithSetup) => {
     if (result) {
       results.push(result);
@@ -53,21 +55,29 @@
     results = [];
     resultsWidget?.reset();
 
-    if (worker === null) worker = new SimulationWorker();
-    worker.onmessage = (e: MessageEvent<MsgFromWorker>) => {
-      const msg = e.data;
-      switch (msg.type) {
-        case 'progress':
-          progress = msg.progress;
-          addResult(msg.newResult);
-          break;
-        case 'done':
-          addResult(msg.newResult);
-          progress = 100;
-          running = false;
-          break;
-      }
-    };
+    if (worker === null) {
+      worker = new SimulationWorker();
+      worker.onmessage = (e: MessageEvent<MsgFromWorker>) => {
+        const msg = e.data;
+        switch (msg.type) {
+          case 'progress':
+            progress = msg.progress;
+            addResult(msg.newResult);
+            break;
+          case 'done':
+            addResult(msg.newResult);
+            progress = 100;
+            running = false;
+            break;
+          case 'cancelled':
+            if (terminateWorkerTimeout) {
+              clearTimeout(terminateWorkerTimeout);
+              terminateWorkerTimeout = null;
+            }
+            break;
+        }
+      };
+    }
     const msg: MsgToWorker = {
       type: 'simulate',
       setup: {
@@ -84,7 +94,13 @@
 
   const cancel = () => {
     running = false;
-    if (worker !== null) worker.postMessage({ type: 'cancel' } as MsgToWorker);
+    if (worker !== null) {
+      worker.postMessage({ type: 'cancel' } as MsgToWorker);
+      terminateWorkerTimeout = setTimeout(() => {
+        worker.terminate();
+        worker = null;
+      }, 1000);
+    }
   };
 </script>
 

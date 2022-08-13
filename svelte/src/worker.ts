@@ -7,6 +7,7 @@ import init, {
 
 export type MsgFromWorker =
   | { type: 'done'; newResult?: StatsWithSetup }
+  | { type: 'cancelled' }
   | { type: 'progress'; progress: number; newResult?: StatsWithSetup };
 
 export type MsgToWorker =
@@ -104,6 +105,7 @@ onmessage = (e: MessageEvent<MsgToWorker>) => {
   switch (msg.type) {
     case 'cancel':
       running = false;
+      send({ type: 'cancelled' });
       break;
     case 'simulate':
       startSimulation(msg.setup, msg.findMonthStart);
