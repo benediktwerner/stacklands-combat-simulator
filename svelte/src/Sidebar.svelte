@@ -44,7 +44,7 @@
 </table>
 
 <div class="button-container">
-  <button on:click={running ? cancel : run}>
+  <button class="button button-primary" on:click={running ? cancel : run}>
     {running ? 'Cancel' : 'Simulate'}
   </button>
 </div>
@@ -66,22 +66,5 @@
     margin-top: 24px;
     display: flex;
     justify-content: center;
-  }
-
-  button {
-    border-radius: 20px;
-    padding: 0 25px;
-    line-height: 38px;
-    font-size: 14px;
-    border: none;
-    color: var(--text);
-    background-color: var(--highlight);
-    font-family: 'Open Sans';
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 250ms;
-  }
-  button:hover {
-    background-color: var(--highlight-hover);
   }
 </style>

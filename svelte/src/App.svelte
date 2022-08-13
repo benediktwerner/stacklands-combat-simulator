@@ -1,8 +1,10 @@
 <script lang="ts">
+  import Modal from 'svelte-simple-modal';
   import Results from './Results.svelte';
   import Sidebar from './Sidebar.svelte';
   import SimulationWorker from './worker?worker';
   import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
+  import SetupEditor from './SetupEditor.svelte';
 
   let monthLength = 120;
   let monthStart = 0;
@@ -11,9 +13,12 @@
   let running = false;
   let progress = 0;
 
+  let tab: 'editor' | 'results' = 'editor';
+
   let worker: Worker = null;
-  let results: StatsWithSetup[] | undefined;
+  let results: StatsWithSetup[] = [];
   let resultsWidget: Results | undefined;
+  let editorWidget: SetupEditor | undefined;
 
   const addResult = (result?: StatsWithSetup) => {
     if (result) {
@@ -23,27 +28,18 @@
   };
 
   const run = () => {
+    if (!editorWidget) {
+      alert('Error: Something went wrong.');
+      return;
+    }
+    const enemySetup = editorWidget.getEnemies();
+    const villagerSetup = editorWidget.getVillagers();
+    tab = 'results';
+
     running = true;
     progress = 0;
     results = [];
     resultsWidget?.reset();
-
-    const swordsmen = {
-      hp: 7,
-      attack_speed: 15,
-      hit_chance: 0.9,
-      min_damage: 2,
-      max_damage: 2,
-    };
-    const demon_lord = {
-      hp: 666,
-      attack_speed: 15,
-      hit_chance: 0.75,
-      min_damage: 1,
-      max_damage: 3,
-    };
-    const villagerSetup = Array(8).fill(swordsmen);
-    const enemySetup = [demon_lord];
 
     if (worker === null) worker = new SimulationWorker();
     worker.onmessage = (e: MessageEvent<MsgFromWorker>) => {
@@ -80,45 +76,58 @@
   };
 </script>
 
-<div id="container">
-  <h1>Stacklands Combat Simulator</h1>
-  <main class="card">
-    {#if results}
-      <Results {results} bind:this={resultsWidget} />
-    {/if}
-  </main>
-  <aside class="card">
-    <Sidebar
-      bind:iterations
-      bind:monthLength
-      bind:monthStart
-      bind:findMonthStart
-      {running}
-      {cancel}
-      {run}
-    />
-  </aside>
+<Modal>
+  <div id="container">
+    <h1>Stacklands Combat Simulator</h1>
+    <main class="card">
+      {#if tab === 'editor'}
+        <SetupEditor bind:this={editorWidget} />
+      {:else}
+        <Results {results} bind:this={resultsWidget} />
+      {/if}
+    </main>
+    <nav class="card">
+      <button class="button" on:click={() => (tab = 'editor')}>
+        Edit Setup
+      </button>
+      <button class="button" on:click={() => (tab = 'results')}>
+        View Results
+      </button>
+    </nav>
+    <aside class="card">
+      <Sidebar
+        bind:iterations
+        bind:monthLength
+        bind:monthStart
+        bind:findMonthStart
+        {running}
+        {cancel}
+        {run}
+      />
+    </aside>
 
-  <a
-    id="source-link"
-    href="https://github.com/benediktwerner/stacklands-combat-simulator"
-    target="_blank"
-  >
-    Source Code
-  </a>
-</div>
+    <a
+      id="source-link"
+      href="https://github.com/benediktwerner/stacklands-combat-simulator"
+      target="_blank"
+    >
+      Source Code
+    </a>
+  </div>
 
-<div class="progress-bar">
-  <div class="progress-bar-inner" style:width="{progress}%" />
-</div>
+  <div class="progress-bar">
+    <div class="progress-bar-inner" style:width="{progress}%" />
+  </div>
+</Modal>
 
 <style>
   #container {
     display: grid;
     grid-template-areas:
       'heading heading'
+      'main nav'
       'main side';
-    grid-template-rows: 100px auto;
+    grid-template-rows: 100px 60px auto;
     grid-template-columns: auto 350px;
     width: 100%;
     min-height: 100vh;
@@ -137,6 +146,20 @@
 
   main {
     grid-area: main;
+  }
+
+  nav {
+    grid-area: nav;
+    display: flex;
+    justify-content: space-evenly;
+    padding: 12px !important;
+  }
+
+  nav button {
+    background-color: var(--card-bg-hover);
+  }
+  nav button:hover {
+    background-color: var(--card-bg-hover-hover);
   }
 
   aside {

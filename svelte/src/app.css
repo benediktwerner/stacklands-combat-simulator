@@ -17,12 +17,14 @@
   --text: rgba(255, 255, 255, 0.87);
   --card-bg: #2f2f2f;
   --card-bg-hover: #444444;
+  --card-bg-hover-hover: #555;
   --text-muted: #bbb;
   --text-muted-hover: #ddd;
   --highlight: #646cff;
   --highlight-hover: #747bff;
   --bad: #d85a5c;
   --good: #a1cc74;
+  --villager: #f1e3ac;
 }
 
 *,
@@ -56,6 +58,31 @@ body {
   display: none;
 }
 
-input[type='checkbox'] {
+input[type='checkbox'],
+button {
   cursor: pointer;
+}
+
+button {
+  border: none;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+.button {
+  border-radius: 20px;
+  padding: 0 25px;
+  line-height: 38px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: 'Open Sans';
+  font-weight: 600;
+  transition: background-color 250ms;
+}
+.button-primary {
+  background-color: var(--highlight);
+}
+.button-primary:hover {
+  background-color: var(--highlight-hover);
 }
