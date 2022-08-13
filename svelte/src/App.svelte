@@ -8,7 +8,7 @@
 
   let monthLength = 120;
   let monthStart = 0;
-  let iterations = 10_000;
+  let iterations = 1_000;
   let findMonthStart = true;
   let running = false;
   let progress = 0;
