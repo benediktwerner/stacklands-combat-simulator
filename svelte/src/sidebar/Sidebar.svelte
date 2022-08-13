@@ -5,9 +5,15 @@
   export let monthStart: number;
   export let iterations: number;
   export let findMonthStart: boolean;
+  export let findMonthStartStep: number;
   export let running: boolean;
   export let cancel: () => any;
   export let run: () => any;
+
+  $: {
+    const maxStep = Math.floor(monthLength / 2);
+    if (findMonthStartStep > maxStep) findMonthStartStep = maxStep;
+  }
 </script>
 
 <h3>Settings</h3>
@@ -23,15 +29,29 @@
       </select>
     </td>
   </tr>
-  <tr>
+  <tr title="Try various month start times to find the best one">
     <td>Find optimal start:</td>
     <td><input type="checkbox" bind:checked={findMonthStart} /></td>
   </tr>
-  {#if !findMonthStart}
+  {#if findMonthStart}
+    <tr
+      title="How many seconds between each month start time attempt. A lower amount means more accuracy but it takes longer since it leads to more options to check."
+    >
+      <td>Start steps:</td>
+      <td class="center">
+        <SliderWithValue
+          bind:value={findMonthStartStep}
+          min={5}
+          max={Math.floor(monthLength / 2)}
+          step={5}
+        />
+      </td>
+    </tr>
+  {:else}
     <tr>
       <td> Month Start: </td>
       <td class="center">
-        <SliderWithValue bind:value={monthStart} max={monthLength} />
+        <SliderWithValue bind:value={monthStart} max={monthLength} showMax />
       </td>
     </tr>
   {/if}

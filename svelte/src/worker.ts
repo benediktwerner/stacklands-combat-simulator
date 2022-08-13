@@ -12,7 +12,12 @@ export type MsgFromWorker =
 
 export type MsgToWorker =
   | { type: 'cancel' }
-  | { type: 'simulate'; setup: SimulateSetup; findMonthStart: boolean };
+  | {
+      type: 'simulate';
+      setup: SimulateSetup;
+      findMonthStart: boolean;
+      findMonthStartStep: number;
+    };
 
 export interface SimulateSetup {
   iterations: number;
@@ -44,7 +49,8 @@ const sim = (setup: SimulateSetup): StatsWithSetup => {
 
 const startSimulation = async (
   setup: SimulateSetup,
-  findMonthStart: boolean
+  findMonthStart: boolean,
+  findMonthStartStep: number
 ) => {
   await initPromise;
 
@@ -56,10 +62,12 @@ const startSimulation = async (
     result = sim(setup);
 
     const first = Math.max(
-      5,
-      5 * Math.floor((setup.monthLength - result.longest) / 5)
+      findMonthStartStep,
+      findMonthStartStep *
+        Math.floor((setup.monthLength - result.longest) / findMonthStartStep)
     );
-    const progressUnit = 500 / (setup.monthLength - first + 1);
+    const progressUnit =
+      (findMonthStartStep * 100) / (setup.monthLength - first + 1);
     let progress = progressUnit;
 
     send({
@@ -71,7 +79,7 @@ const startSimulation = async (
     for (
       setup.monthStart = first;
       setup.monthStart < setup.monthLength;
-      setup.monthStart += 5
+      setup.monthStart += findMonthStartStep
     ) {
       await sleep();
       if (!running) break;
@@ -108,7 +116,7 @@ onmessage = (e: MessageEvent<MsgToWorker>) => {
       send({ type: 'cancelled' });
       break;
     case 'simulate':
-      startSimulation(msg.setup, msg.findMonthStart);
+      startSimulation(msg.setup, msg.findMonthStart, msg.findMonthStartStep);
       break;
   }
 };

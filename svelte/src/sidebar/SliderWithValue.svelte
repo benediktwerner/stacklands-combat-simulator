@@ -1,11 +1,16 @@
 <script lang="ts">
   export let value: number;
   export let max: number;
+  export let min: number = 0;
+  export let step: number = 1;
+  export let showMax: boolean = false;
 </script>
 
 <div>
-  <span>{value}/{max}</span>
-  <input type="range" min="0" {max} bind:value />
+  <span>
+    {value}{#if showMax}/{max}{/if}
+  </span>
+  <input type="range" {min} {step} {max} bind:value />
 </div>
 
 <style>

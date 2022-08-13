@@ -13,6 +13,7 @@
   let monthStart = 0;
   let iterations = 1_000;
   let findMonthStart = true;
+  let findMonthStartStep = 5;
   let running = false;
   let progress = 0;
 
@@ -88,6 +89,7 @@
         monthStart,
       },
       findMonthStart,
+      findMonthStartStep,
     };
     worker.postMessage(msg);
   };
@@ -128,6 +130,7 @@
         bind:monthLength
         bind:monthStart
         bind:findMonthStart
+        bind:findMonthStartStep
         {running}
         {cancel}
         {run}
