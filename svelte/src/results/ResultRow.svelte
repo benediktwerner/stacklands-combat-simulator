@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { StatsWithSetup } from './worker';
+  import type { StatsWithSetup } from '../worker';
 
   export let result: StatsWithSetup;
 

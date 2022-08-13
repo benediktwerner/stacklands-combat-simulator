@@ -1,8 +1,8 @@
 <script lang="ts">
   import CombatantImage from './CombatantImage.svelte';
-  import { VILLAGERS } from './combatants';
+  import { VILLAGERS, ENEMIES } from '../combatants';
   import StatsTable from './StatsTable.svelte';
-  import type { Combatant } from './types';
+  import type { Combatant } from '../types';
 
   export let add: (c: Combatant) => void;
   export let isEnemy: boolean;
@@ -95,7 +95,7 @@
     <button class="button button-primary">Add</button>
   </div>
 {:else}
-  {#each VILLAGERS as combatant}
+  {#each isEnemy ? ENEMIES : VILLAGERS as combatant}
     <div class="combatant-row" on:click={() => add(combatant)}>
       <div class="combatant-side">
         <CombatantImage {combatant} {isEnemy} />

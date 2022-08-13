@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CombatantStats } from './wasm/stacklands_combat_simulator';
+  import type { CombatantStats } from '../wasm/stacklands_combat_simulator';
 
   export let combatant: CombatantStats;
 </script>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Combatant } from './types';
+  import type { Combatant } from '../types';
 
   export let combatant: Combatant;
   export let isEnemy = false;

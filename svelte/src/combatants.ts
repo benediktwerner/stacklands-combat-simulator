@@ -10,3 +10,14 @@ export const VILLAGERS: Combatant[] = [
     name: 'Swordman',
   },
 ];
+
+export const ENEMIES: Combatant[] = [
+  {
+    hp: 7,
+    attack_speed: 15,
+    hit_chance: 0.9,
+    min_damage: 2,
+    max_damage: 2,
+    name: 'Swordman',
+  },
+];

@@ -1,10 +1,10 @@
 <script lang="ts">
   import Modal from 'svelte-simple-modal';
-  import Results from './Results.svelte';
-  import Sidebar from './Sidebar.svelte';
+  import Results from './results/Results.svelte';
+  import Sidebar from './sidebar/Sidebar.svelte';
   import SimulationWorker from './worker?worker';
   import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
-  import SetupEditor from './SetupEditor.svelte';
+  import SetupEditor from './editor/SetupEditor.svelte';
 
   let monthLength = 120;
   let monthStart = 0;

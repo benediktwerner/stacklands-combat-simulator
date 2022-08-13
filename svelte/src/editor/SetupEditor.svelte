@@ -3,9 +3,9 @@
   import AddCombatantDialog from './AddCombatantDialog.svelte';
 
   import CombatantCard from './CombatantCard.svelte';
-  import type { SimpleModalContext } from './simple-modal';
-  import type { Combatant, CombatantSetup } from './types';
-  import type { CombatantStats } from './wasm/stacklands_combat_simulator';
+  import type { SimpleModalContext } from '../simple-modal';
+  import type { CombatantSetup } from '../types';
+  import type { CombatantStats } from '../wasm/stacklands_combat_simulator';
 
   let villagerSetup: CombatantSetup[] = [
     {

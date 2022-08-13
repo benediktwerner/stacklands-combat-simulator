@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Stats } from './wasm/stacklands_combat_simulator';
+  import type { Stats } from '../wasm/stacklands_combat_simulator';
 
   export let result: Stats;
   $: maxProb = Math.max(...result.enemy_hp, ...result.village_survivors);

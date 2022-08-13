@@ -1,7 +1,7 @@
 <script lang="ts">
   import CombatantImage from './CombatantImage.svelte';
   import StatsTable from './StatsTable.svelte';
-  import type { CombatantSetup } from './types';
+  import type { CombatantSetup } from '../types';
 
   export let combatant: CombatantSetup;
   export let isEnemy: boolean = false;
