@@ -1,122 +1,65 @@
 <script lang="ts">
-  import type { Stats } from './wasm/stacklands_combat_simulator';
+  import ResultGraph from './ResultGraph.svelte';
+  import type { StatsWithSetup } from './worker';
 
-  export let results: Stats;
-  $: maxProb = Math.max(...results.enemy_hp, ...results.village_survivors);
-  $: totalProb = [...results.enemy_hp, ...results.village_survivors].reduce(
-    (a, b) => a + b,
-    0
-  );
+  export let results: StatsWithSetup | StatsWithSetup[];
 
-  let tooltip: HTMLElement;
+  let resultIndex = null;
 
-  const tooltipMove = (e: MouseEvent) => {
-    let target = e.target as HTMLElement;
-    if (target && !target.dataset.title) target = target.parentElement;
-    if (!target || !target.dataset.title) {
-      tooltip.classList.add('hidden');
-      return;
-    }
-    tooltip.classList.remove('hidden');
-    tooltip.innerText = target.dataset.title;
-    tooltip.style.top = e.clientY - 25 + 'px';
-    tooltip.style.left = e.clientX + 'px';
+  export const reset = () => {
+    resultIndex = null;
   };
 </script>
 
-<table>
-  <tr>
-    <td> Win rate: </td>
-    <td class="align-right">
-      {((100 * results.wins) / results.iters).toFixed(2)} %
-    </td>
-  </tr>
-  <tr>
-    <td>Avg length:</td>
-    <td class="align-right"
-      >{Math.floor(results.total_length / results.iters)}s</td
-    >
-  </tr>
-  <tr>
-    <td>Longest:</td>
-    <td class="align-right">{results.longest}s</td>
-  </tr>
-</table>
-
-<br />
-
-<b>Lefover Enemy HP</b>
-<div
-  class="stats-graph"
-  on:mousemove={tooltipMove}
-  on:mouseleave={() => tooltip.classList.add('hidden')}
->
-  {#each results.enemy_hp as hp, index}
-    <div class="label">
-      {90 - index * 10}-{100 - index * 10}%
-    </div>
-    <div class="bar" data-title="{((100 * hp) / totalProb).toFixed(2)} %">
-      <div class="demon-hp" style="width: {(100 * hp) / maxProb}%" />
-    </div>
-  {/each}
-</div>
-
-<b>Leftover Villagers</b>
-<div
-  class="stats-graph"
-  on:mousemove={tooltipMove}
-  on:mouseleave={() => tooltip.classList.add('hidden')}
->
-  {#each results.village_survivors as chance, index}
-    <div class="label">
-      {index + 1}
-    </div>
-    <div class="bar" data-title="{((100 * chance) / totalProb).toFixed(2)} %">
-      <div class="villagers" style="width: {(100 * chance) / maxProb}%" />
-    </div>
-  {/each}
-</div>
-
-<div class="tooltip hidden" bind:this={tooltip} />
+{#if !Array.isArray(results)}
+  <ResultGraph result={results} />
+{:else if resultIndex !== null}
+  <ResultGraph result={results[resultIndex]} />
+{:else}
+  <div class="table">
+    <div class="heading start">Start (s)</div>
+    <div class="heading win-rate">Win Rate</div>
+    <div class="heading win-rate-bar" />
+    <div class="heading avg-length">Avg Length (s)</div>
+    <div class="heading longest">Longest (s)</div>
+    {#each results as result}
+      {@const winRate = ((100 * result.wins) / result.iters).toFixed(2)}
+      <div class="start">{result.monthStart}</div>
+      <div class="win-rate">
+        {winRate} %
+      </div>
+      <div class="win-rate-bar">
+        <div class="win-rate-bar-inner" style:width="{winRate}%" />
+      </div>
+      <div class="avg-length">
+        {Math.floor(result.total_length / result.iters)}
+      </div>
+      <div class="longest">{result.longest}</div>
+    {/each}
+  </div>
+{/if}
 
 <style>
-  .demon-hp {
-    background-color: #d85a5c;
-    height: 12px;
-  }
-  .villagers {
-    background-color: #a1cc74;
-    height: 12px;
-  }
-
-  .stats-graph {
-    display: grid;
-    grid-template-columns: 70px auto;
-    grid-auto-flow: row dense;
-  }
-  .stats-graph .label {
-    grid-column-start: 1;
+  .table {
+    width: 100%;
     text-align: right;
-    padding-right: 7px;
-  }
-  .stats-graph .bar {
-    grid-column-start: 2;
-    display: flex;
+    display: grid;
+    grid-template-columns: 70px 80px auto 120px 100px;
+    grid-auto-flow: row dense;
+    gap: 5px;
     align-items: center;
   }
-  .stats-graph .bar:hover {
-    background-color: #444444;
-  }
-  .stats-graph .bar > div {
-    transition: width 250ms ease-in-out;
+
+  .heading {
+    font-weight: bold;
   }
 
-  .tooltip {
-    position: fixed;
-    background-color: black;
-    border-radius: 12px;
-    padding: 5px 10px;
-    pointer-events: none;
-    transform: translateX(-100%);
+  .win-rate-bar:not(.heading) {
+    width: 100%;
+    height: 1em;
+  }
+  .win-rate-bar-inner {
+    height: 100%;
+    background-color: var(--good);
   }
 </style>

@@ -4,6 +4,9 @@
   export let monthLength: number;
   export let monthStart: number;
   export let iterations: number;
+  export let findMonthStart: boolean;
+  export let running: boolean;
+  export let cancel: () => any;
   export let run: () => any;
 </script>
 
@@ -14,18 +17,24 @@
     <td> Month Length: </td>
     <td>
       <select bind:value={monthLength}>
-        <option value={90}>Short</option>
-        <option value={120}>Normal</option>
-        <option value={200}>Long</option>
+        <option value={90}>Short (90s)</option>
+        <option value={120}>Normal (120s)</option>
+        <option value={200}>Long (200s)</option>
       </select>
     </td>
   </tr>
   <tr>
-    <td> Month Start: </td>
-    <td class="center">
-      <SliderWithValue bind:value={monthStart} max={monthLength} />
-    </td>
+    <td>Find optimal start:</td>
+    <td><input type="checkbox" bind:checked={findMonthStart} /></td>
   </tr>
+  {#if !findMonthStart}
+    <tr>
+      <td> Month Start: </td>
+      <td class="center">
+        <SliderWithValue bind:value={monthStart} max={monthLength} />
+      </td>
+    </tr>
+  {/if}
   <tr>
     <td> Iterations: </td>
     <td>
@@ -35,7 +44,9 @@
 </table>
 
 <div class="button-container">
-  <button on:click={run}>Simulate</button>
+  <button on:click={running ? cancel : run}>
+    {running ? 'Cancel' : 'Simulate'}
+  </button>
 </div>
 
 <style>
@@ -64,13 +75,13 @@
     font-size: 14px;
     border: none;
     color: var(--text);
-    background-color: #646cff;
+    background-color: var(--highlight);
     font-family: 'Open Sans';
     font-weight: 600;
     cursor: pointer;
     transition: background-color 250ms;
   }
   button:hover {
-    background-color: #747bff;
+    background-color: var(--highlight-hover);
   }
 </style>

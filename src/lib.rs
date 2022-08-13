@@ -239,7 +239,7 @@ pub fn simulate(
             stats.village_survivors[villagers.len() - 1] += 1;
         } else {
             let hp = enemies.iter().map(|e| e.borrow().hp).sum::<u32>() as usize - 1;
-            stats.enemy_hp[hp * 10 / total_enemy_hp] += 1;
+            stats.enemy_hp[9 - hp * 10 / total_enemy_hp] += 1;
         }
     }
 

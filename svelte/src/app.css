@@ -18,6 +18,10 @@
   --card-bg: #2f2f2f;
   --text-muted: #bbb;
   --text-muted-hover: #ddd;
+  --highlight: #646cff;
+  --highlight-hover: #747bff;
+  --bad: #d85a5c;
+  --good: #a1cc74;
 }
 
 *,
@@ -49,4 +53,8 @@ body {
 
 .hidden {
   display: none;
+}
+
+input[type='checkbox'] {
+  cursor: pointer;
 }

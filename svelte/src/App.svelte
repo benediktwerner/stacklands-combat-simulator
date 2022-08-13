@@ -1,30 +1,26 @@
 <script lang="ts">
   import Results from './Results.svelte';
   import Sidebar from './Sidebar.svelte';
-  import init, {
-    simulate,
-    type Stats,
-  } from './wasm/stacklands_combat_simulator.js';
+  import SimulationWorker from './worker?worker';
+  import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
 
   let monthLength = 120;
   let monthStart = 0;
   let iterations = 10_000;
+  let findMonthStart = true;
+  let running = false;
+  let progress = 0;
 
-  let results: Stats | null = null;
-  results = {
-    iters: 10000,
-    wins: 893,
-    total_length: 852318,
-    longest: 115,
-    village_survivors: [81, 134, 186, 205, 158, 86, 36, 7],
-    enemy_hp: [1870, 2962, 2587, 1348, 314, 25, 1, 0, 0, 0],
-  };
-  results.enemy_hp.reverse();
+  let worker: Worker = null;
+  let results: null | StatsWithSetup | StatsWithSetup[] = null;
+  let resultsWidget: Results | undefined;
 
-  const initPromise = init();
+  const run = () => {
+    running = true;
+    progress = 0;
+    results = null;
+    resultsWidget?.reset();
 
-  const run = async () => {
-    await initPromise;
     const swordsmen = {
       hp: 7,
       attack_speed: 15,
@@ -39,18 +35,49 @@
       min_damage: 1,
       max_damage: 3,
     };
-    const villagers = Array(8).fill(swordsmen);
-    const enemies = [demon_lord];
-    console.log(monthStart, monthLength);
-    const res = simulate(
-      iterations,
-      villagers,
-      enemies,
-      monthStart,
-      monthLength
-    );
-    res.enemy_hp.reverse();
-    results = res;
+    const villagerSetup = Array(8).fill(swordsmen);
+    const enemySetup = [demon_lord];
+
+    if (worker === null) worker = new SimulationWorker();
+    worker.onmessage = (e: MessageEvent<MsgFromWorker>) => {
+      const msg = e.data;
+      switch (msg.type) {
+        case 'progress':
+          progress = msg.progress;
+          if (msg.newResult) {
+            if (results === null || !Array.isArray(results))
+              results = [msg.newResult];
+            else {
+              results.push(msg.newResult);
+              results = results;
+            }
+          }
+          break;
+        case 'result':
+          results = msg.result;
+        // fallthrough
+        case 'done':
+          running = false;
+          break;
+      }
+    };
+    const msg: MsgToWorker = {
+      type: 'simulate',
+      setup: {
+        iterations,
+        villagerSetup,
+        enemySetup,
+        monthLength,
+        monthStart,
+      },
+      findMonthStart,
+    };
+    worker.postMessage(msg);
+  };
+
+  const cancel = () => {
+    running = false;
+    if (worker !== null) worker.postMessage({ type: 'cancel' } as MsgToWorker);
   };
 </script>
 
@@ -58,11 +85,19 @@
   <h1>Stacklands Combat Simulator</h1>
   <main class="card">
     {#if results !== null}
-      <Results {results} />
+      <Results {results} bind:this={resultsWidget} />
     {/if}
   </main>
   <aside class="card">
-    <Sidebar bind:iterations bind:monthLength bind:monthStart {run} />
+    <Sidebar
+      bind:iterations
+      bind:monthLength
+      bind:monthStart
+      bind:findMonthStart
+      {running}
+      {cancel}
+      {run}
+    />
   </aside>
 
   <a
@@ -74,6 +109,10 @@
   </a>
 </div>
 
+<div class="progress-bar" class:hidden={!running}>
+  <div class="progress-bar-inner" style:width="{progress}%" />
+</div>
+
 <style>
   #container {
     display: grid;
@@ -82,8 +121,8 @@
       'main side';
     grid-template-rows: 100px auto;
     grid-template-columns: auto 350px;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    min-height: 100vh;
     margin: 0;
     gap: 24px;
     padding: 24px;
@@ -123,5 +162,21 @@
   }
   #source-link:hover {
     color: var(--text-muted-hover);
+  }
+
+  .progress-bar {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    top: 100px;
+    height: 12px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+  }
+  .progress-bar-inner {
+    height: 100%;
+    border-radius: 12px;
+    background: var(--highlight);
+    transition: width 250ms;
   }
 </style>
