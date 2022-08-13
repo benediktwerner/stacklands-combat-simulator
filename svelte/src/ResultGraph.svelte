@@ -24,27 +24,6 @@
   };
 </script>
 
-<table>
-  <tr>
-    <td> Win rate: </td>
-    <td class="align-right">
-      {((100 * result.wins) / result.iters).toFixed(2)} %
-    </td>
-  </tr>
-  <tr>
-    <td>Avg length:</td>
-    <td class="align-right"
-      >{Math.floor(result.total_length / result.iters)}s</td
-    >
-  </tr>
-  <tr>
-    <td>Longest:</td>
-    <td class="align-right">{result.longest}s</td>
-  </tr>
-</table>
-
-<br />
-
 <b>Lefover Enemy HP</b>
 <div
   class="stats-graph"
@@ -60,6 +39,8 @@
     </div>
   {/each}
 </div>
+
+<br />
 
 <b>Leftover Villagers</b>
 <div
@@ -105,7 +86,7 @@
     align-items: center;
   }
   .stats-graph .bar:hover {
-    background-color: #444444;
+    background-color: var(--card-bg-hover);
   }
   .stats-graph .bar > div {
     transition: width 250ms ease-in-out;

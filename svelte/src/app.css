@@ -16,6 +16,7 @@
 
   --text: rgba(255, 255, 255, 0.87);
   --card-bg: #2f2f2f;
+  --card-bg-hover: #444444;
   --text-muted: #bbb;
   --text-muted-hover: #ddd;
   --highlight: #646cff;

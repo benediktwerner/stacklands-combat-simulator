@@ -12,13 +12,20 @@
   let progress = 0;
 
   let worker: Worker = null;
-  let results: null | StatsWithSetup | StatsWithSetup[] = null;
+  let results: StatsWithSetup[] | undefined;
   let resultsWidget: Results | undefined;
+
+  const addResult = (result?: StatsWithSetup) => {
+    if (result) {
+      results.push(result);
+      results = results;
+    }
+  };
 
   const run = () => {
     running = true;
     progress = 0;
-    results = null;
+    results = [];
     resultsWidget?.reset();
 
     const swordsmen = {
@@ -44,19 +51,11 @@
       switch (msg.type) {
         case 'progress':
           progress = msg.progress;
-          if (msg.newResult) {
-            if (results === null || !Array.isArray(results))
-              results = [msg.newResult];
-            else {
-              results.push(msg.newResult);
-              results = results;
-            }
-          }
+          addResult(msg.newResult);
           break;
-        case 'result':
-          results = msg.result;
-        // fallthrough
         case 'done':
+          addResult(msg.newResult);
+          progress = 100;
           running = false;
           break;
       }
@@ -84,7 +83,7 @@
 <div id="container">
   <h1>Stacklands Combat Simulator</h1>
   <main class="card">
-    {#if results !== null}
+    {#if results}
       <Results {results} bind:this={resultsWidget} />
     {/if}
   </main>
@@ -109,7 +108,7 @@
   </a>
 </div>
 
-<div class="progress-bar" class:hidden={!running}>
+<div class="progress-bar">
   <div class="progress-bar-inner" style:width="{progress}%" />
 </div>
 

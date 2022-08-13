@@ -6,8 +6,7 @@ import init, {
 } from './wasm/stacklands_combat_simulator.js';
 
 export type MsgFromWorker =
-  | { type: 'done' }
-  | { type: 'result'; result: StatsWithSetup }
+  | { type: 'done'; newResult?: StatsWithSetup }
   | { type: 'progress'; progress: number; newResult?: StatsWithSetup };
 
 export type MsgToWorker =
@@ -91,8 +90,8 @@ const startSimulation = async (
     send({ type: 'done' });
   } else {
     send({
-      type: 'result',
-      result: sim(setup),
+      type: 'done',
+      newResult: sim(setup),
     });
   }
 

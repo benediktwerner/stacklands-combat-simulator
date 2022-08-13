@@ -1,8 +1,9 @@
 <script lang="ts">
   import ResultGraph from './ResultGraph.svelte';
+  import ResultRow from './ResultRow.svelte';
   import type { StatsWithSetup } from './worker';
 
-  export let results: StatsWithSetup | StatsWithSetup[];
+  export let results: StatsWithSetup[];
 
   let resultIndex = null;
 
@@ -11,55 +12,46 @@
   };
 </script>
 
-{#if !Array.isArray(results)}
-  <ResultGraph result={results} />
-{:else if resultIndex !== null}
-  <ResultGraph result={results[resultIndex]} />
-{:else}
-  <div class="table">
-    <div class="heading start">Start (s)</div>
-    <div class="heading win-rate">Win Rate</div>
-    <div class="heading win-rate-bar" />
-    <div class="heading avg-length">Avg Length (s)</div>
-    <div class="heading longest">Longest (s)</div>
-    {#each results as result}
-      {@const winRate = ((100 * result.wins) / result.iters).toFixed(2)}
-      <div class="start">{result.monthStart}</div>
-      <div class="win-rate">
-        {winRate} %
-      </div>
-      <div class="win-rate-bar">
-        <div class="win-rate-bar-inner" style:width="{winRate}%" />
-      </div>
-      <div class="avg-length">
-        {Math.floor(result.total_length / result.iters)}
-      </div>
-      <div class="longest">{result.longest}</div>
-    {/each}
+<b class="row">
+  <span>Start (s)</span>
+  <span>Win Rate</span>
+  <span />
+  <span>Avg Length (s)</span>
+  <span>Longest (s)</span>
+</b>
+{#if resultIndex !== null || results.length === 1}
+  {@const result = resultIndex === null ? results[0] : results[resultIndex]}
+  <div
+    class="row"
+    class:no-hover={resultIndex === null}
+    on:click={() => (resultIndex = null)}
+  >
+    <ResultRow {result} />
   </div>
+  <br />
+  <ResultGraph {result} />
+{:else}
+  {#each results as result, index}
+    <div class="row" on:click={() => (resultIndex = index)}>
+      <ResultRow {result} />
+    </div>
+  {/each}
 {/if}
 
 <style>
-  .table {
+  .row {
     width: 100%;
     text-align: right;
     display: grid;
     grid-template-columns: 70px 80px auto 120px 100px;
-    grid-auto-flow: row dense;
     gap: 5px;
     align-items: center;
+    padding: 2px 0;
   }
-
-  .heading {
-    font-weight: bold;
+  .row:not(.no-hover) {
+    cursor: pointer;
   }
-
-  .win-rate-bar:not(.heading) {
-    width: 100%;
-    height: 1em;
-  }
-  .win-rate-bar-inner {
-    height: 100%;
-    background-color: var(--good);
+  :not(b).row:hover {
+    background-color: var(--card-bg-hover);
   }
 </style>
