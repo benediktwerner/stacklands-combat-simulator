@@ -119,7 +119,7 @@
     {/each}
   </div>
   <hr />
-  <div class="combatant-row" on:click={() => (custom = defaultCustom)}>
+  <div class="combatant-row" on:click={() => (custom = { ...defaultCustom })}>
     <b>Add Custom Combatant</b>
   </div>
 {/if}

@@ -5,16 +5,9 @@
   import CombatantCard from './CombatantCard.svelte';
   import type { SimpleModalContext } from '../simple-modal';
   import type { CombatantSetup } from '../types';
-  import type { CombatantStats } from '../wasm/stacklands_combat_simulator';
-  import { VILLAGERS, ENEMIES } from '../combatants';
 
-  let villagerSetup: CombatantSetup[] = [{ ...VILLAGERS[5], count: 8 }];
-  let enemySetup: CombatantSetup[] = [
-    {
-      ...ENEMIES[2],
-      count: 1,
-    },
-  ];
+  export let villagerSetup: CombatantSetup[];
+  export let enemySetup: CombatantSetup[];
 
   const modal = getContext<SimpleModalContext>('simple-modal');
   const addCard = (isEnemy: boolean) => {
@@ -45,17 +38,6 @@
       }
     );
   };
-
-  const createSetup = (combatants: CombatantSetup[]): CombatantStats[] => {
-    const result = [];
-    for (const c of combatants) {
-      for (let i = 0; i < c.count; i++) result.push(c);
-    }
-    return result;
-  };
-  export const getVillagers = (): CombatantStats[] =>
-    createSetup(villagerSetup);
-  export const getEnemies = (): CombatantStats[] => createSetup(enemySetup);
 </script>
 
 <div class="row">

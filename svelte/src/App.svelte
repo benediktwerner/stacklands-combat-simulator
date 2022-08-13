@@ -5,6 +5,9 @@
   import SimulationWorker from './worker?worker';
   import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
   import SetupEditor from './editor/SetupEditor.svelte';
+  import type { CombatantSetup } from './types';
+  import { ENEMIES, VILLAGERS } from './combatants';
+  import type { CombatantStats } from './wasm/stacklands_combat_simulator';
 
   let monthLength = 120;
   let monthStart = 0;
@@ -15,10 +18,17 @@
 
   let tab: 'editor' | 'results' = 'editor';
 
+  let villagerSetup: CombatantSetup[] = [{ ...VILLAGERS[5], count: 8 }];
+  let enemySetup: CombatantSetup[] = [
+    {
+      ...ENEMIES[2],
+      count: 1,
+    },
+  ];
+
   let worker: Worker = null;
   let results: StatsWithSetup[] = [];
   let resultsWidget: Results | undefined;
-  let editorWidget: SetupEditor | undefined;
 
   const addResult = (result?: StatsWithSetup) => {
     if (result) {
@@ -27,13 +37,15 @@
     }
   };
 
-  const run = () => {
-    if (!editorWidget) {
-      alert('Error: Something went wrong.');
-      return;
+  const createSetup = (combatants: CombatantSetup[]): CombatantStats[] => {
+    const result = [];
+    for (const c of combatants) {
+      for (let i = 0; i < c.count; i++) result.push(c);
     }
-    const enemySetup = editorWidget.getEnemies();
-    const villagerSetup = editorWidget.getVillagers();
+    return result;
+  };
+
+  const run = () => {
     tab = 'results';
 
     running = true;
@@ -60,8 +72,8 @@
       type: 'simulate',
       setup: {
         iterations,
-        villagerSetup,
-        enemySetup,
+        villagerSetup: createSetup(villagerSetup),
+        enemySetup: createSetup(enemySetup),
         monthLength,
         monthStart,
       },
@@ -81,7 +93,7 @@
     <h1>Stacklands Combat Simulator</h1>
     <main class="card">
       {#if tab === 'editor'}
-        <SetupEditor bind:this={editorWidget} />
+        <SetupEditor bind:villagerSetup bind:enemySetup />
       {:else}
         <Results {results} bind:this={resultsWidget} />
       {/if}
