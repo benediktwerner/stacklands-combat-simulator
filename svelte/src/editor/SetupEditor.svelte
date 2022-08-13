@@ -6,35 +6,12 @@
   import type { SimpleModalContext } from '../simple-modal';
   import type { CombatantSetup } from '../types';
   import type { CombatantStats } from '../wasm/stacklands_combat_simulator';
+  import { VILLAGERS, ENEMIES } from '../combatants';
 
-  let villagerSetup: CombatantSetup[] = [
-    {
-      hp: 7,
-      attack_speed: 15,
-      hit_chance: 0.9,
-      min_damage: 2,
-      max_damage: 2,
-      name: 'Swordman',
-      count: 8,
-    },
-    {
-      hp: 5,
-      attack_speed: 3,
-      hit_chance: 0.4,
-      min_damage: 1,
-      max_damage: 2,
-      name: 'Villager',
-      count: 1,
-    },
-  ];
+  let villagerSetup: CombatantSetup[] = [{ ...VILLAGERS[5], count: 8 }];
   let enemySetup: CombatantSetup[] = [
     {
-      hp: 666,
-      attack_speed: 15,
-      hit_chance: 0.75,
-      min_damage: 1,
-      max_damage: 3,
-      name: 'Demon Lord',
+      ...ENEMIES[2],
       count: 1,
     },
   ];
@@ -63,7 +40,7 @@
         styleWindow: {
           background: 'var(--card-bg)',
           color: 'var(--text)',
-          width: '350px',
+          width: '400px',
         },
       }
     );

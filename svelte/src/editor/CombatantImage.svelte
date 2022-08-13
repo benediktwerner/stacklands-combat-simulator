@@ -5,21 +5,26 @@
   export let isEnemy = false;
 </script>
 
-<object
-  class:enemy={isEnemy}
-  data="/images/{combatant.name}.png"
-  title={combatant.name}
-  type="image/png"
-  width="96"
-  height="96"
-/>
+{#if combatant.image_name}
+  <img
+    class="img"
+    class:enemy={isEnemy}
+    src="/images/{combatant.image_name}.png"
+    title={combatant.name}
+    alt={combatant.name}
+  />
+{:else}
+  <div class="img" title={combatant.name} />
+{/if}
 
 <style>
-  object {
+  .img {
     background-color: var(--villager);
     border-radius: 50%;
+    width: 96px;
+    height: 96px;
   }
-  object.enemy {
+  .img.enemy {
     background-color: var(--bad);
   }
 </style>

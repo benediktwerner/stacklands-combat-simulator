@@ -95,15 +95,17 @@
     <button class="button button-primary">Add</button>
   </div>
 {:else}
-  {#each isEnemy ? ENEMIES : VILLAGERS as combatant}
-    <div class="combatant-row" on:click={() => add(combatant)}>
-      <div class="combatant-side">
-        <CombatantImage {combatant} {isEnemy} />
-        <b>{combatant.name}</b>
+  <div class="container">
+    {#each isEnemy ? ENEMIES : VILLAGERS as combatant}
+      <div class="combatant-row" on:click={() => add(combatant)}>
+        <div class="combatant-side">
+          <CombatantImage {combatant} {isEnemy} />
+          <b>{combatant.name}</b>
+        </div>
+        <StatsTable {combatant} />
       </div>
-      <StatsTable {combatant} />
-    </div>
-  {/each}
+    {/each}
+  </div>
   <hr />
   <div class="combatant-row" on:click={() => (custom = defaultCustom)}>
     <b>Add Custom Combatant</b>
@@ -113,6 +115,11 @@
 <style>
   h2 {
     margin-top: 0;
+  }
+
+  .container {
+    max-height: 70vh;
+    overflow-y: scroll;
   }
 
   .button-container {
