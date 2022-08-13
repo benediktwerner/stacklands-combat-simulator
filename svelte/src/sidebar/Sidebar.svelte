@@ -61,6 +61,12 @@
       <input type="number" min="1" max="100000000" bind:value={iterations} />
     </td>
   </tr>
+  <tr
+    title="How many different possible scenarios will be tested with the current setup (the higher the longer the simulation takes)."
+  >
+    <td>Max scenarios:</td>
+    <td>{findMonthStart ? Math.floor(monthLength / findMonthStartStep) : 1}</td>
+  </tr>
 </table>
 
 <div class="button-container">
