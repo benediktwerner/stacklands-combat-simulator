@@ -7,6 +7,9 @@
   export let add: (c: Combatant) => void;
   export let isEnemy: boolean;
 
+  let search = '';
+  $: searchRegex = new RegExp(search, 'ig');
+
   const defaultCustom: Combatant = {
     name: '',
     hp: 5,
@@ -95,15 +98,24 @@
     <button class="button button-primary">Add</button>
   </div>
 {:else}
+  <input
+    class="search"
+    type="text"
+    bind:value={search}
+    placeholder="Search"
+    autofocus
+  />
   <div class="container">
     {#each isEnemy ? ENEMIES : VILLAGERS as combatant}
-      <div class="combatant-row" on:click={() => add(combatant)}>
-        <div class="combatant-side">
-          <CombatantImage {combatant} {isEnemy} />
-          <b>{combatant.name}</b>
+      {#if !search || combatant.name.match(searchRegex)}
+        <div class="combatant-row" on:click={() => add(combatant)}>
+          <div class="combatant-side">
+            <CombatantImage {combatant} {isEnemy} />
+            <b>{combatant.name}</b>
+          </div>
+          <StatsTable {combatant} />
         </div>
-        <StatsTable {combatant} />
-      </div>
+      {/if}
     {/each}
   </div>
   <hr />
@@ -118,8 +130,17 @@
   }
 
   .container {
-    max-height: 70vh;
+    max-height: 60vh;
     overflow-y: scroll;
+  }
+
+  .search {
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    background-color: var(--card-bg-hover);
+    padding: 12px;
+    margin-bottom: 7px;
   }
 
   .button-container {
