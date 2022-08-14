@@ -29,15 +29,21 @@
   };
 
   const better = (n: StatsWithSetup, old: StatsWithSetup): boolean => {
-    if (n.wins > old.wins) return true;
-    if (n.wins < old.wins) return false;
+    if (n.wins !== old.wins) return n.wins > old.wins;
     const nSurv = n.village_survivors
       .map((v, i) => v * (i + 1))
       .reduce((a, b) => a + b, 0);
     const oSurv = old.village_survivors
       .map((v, i) => v * (i + 1))
       .reduce((a, b) => a + b, 0);
-    return nSurv > oSurv;
+    if (nSurv !== oSurv) return nSurv > oSurv;
+    const nEnemy = n.enemy_hp
+      .map((v, i) => v * (i + 1))
+      .reduce((a, b) => a + b, 0);
+    const oEnemy = old.enemy_hp
+      .map((v, i) => v * (i + 1))
+      .reduce((a, b) => a + b, 0);
+    return nEnemy > oEnemy;
   };
 
   const filter = (
