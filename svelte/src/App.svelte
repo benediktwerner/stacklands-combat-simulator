@@ -140,7 +140,7 @@
       />
     </aside>
     <aside class="settings-view card">
-      <ViewSettings bind:onlyShowOptimal />
+      <ViewSettings bind:onlyShowOptimal {findMonthStart} />
     </aside>
 
     <a
