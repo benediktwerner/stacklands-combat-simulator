@@ -169,7 +169,7 @@
       'main nav'
       'main side1'
       'main side2';
-    grid-template-rows: 100px 60px auto 1fr;
+    grid-template-rows: 80px 60px auto 1fr;
     grid-template-columns: auto 350px;
     width: 100%;
     min-height: 100vh;
@@ -184,6 +184,7 @@
     text-align: center;
     font-size: 3.2em;
     line-height: 1.1;
+    margin-top: 16px;
   }
 
   main {
@@ -235,7 +236,7 @@
     position: absolute;
     left: 24px;
     right: 24px;
-    top: 100px;
+    top: 80px;
     height: 12px;
     border-radius: 12px;
     background-color: var(--card-bg);
