@@ -114,7 +114,7 @@
         <Results
           {results}
           bind:this={resultsWidget}
-          onlyShowOptimal={$onlyShowOptimal && $findMonthStart}
+          onlyShowOptimal={$onlyShowOptimal}
         />
       {/if}
     </main>
@@ -141,10 +141,7 @@
       />
     </aside>
     <aside class="settings-view card">
-      <ViewSettings
-        bind:onlyShowOptimal={$onlyShowOptimal}
-        findMonthStart={$findMonthStart}
-      />
+      <ViewSettings bind:onlyShowOptimal={$onlyShowOptimal} />
     </aside>
 
     <a

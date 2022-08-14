@@ -1,6 +1,5 @@
 <script lang="ts">
   export let onlyShowOptimal: boolean;
-  export let findMonthStart: boolean;
 </script>
 
 <h3>Display Settings</h3>
@@ -9,11 +8,7 @@
   <tr>
     <td>Only show optimal start time:</td>
     <td>
-      <input
-        type="checkbox"
-        bind:checked={onlyShowOptimal}
-        disabled={!findMonthStart}
-      />
+      <input type="checkbox" bind:checked={onlyShowOptimal} />
     </td>
   </tr>
 </table>
