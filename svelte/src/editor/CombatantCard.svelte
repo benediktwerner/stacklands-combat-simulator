@@ -18,16 +18,26 @@
       <input
         type="number"
         bind:value={combatant.min_count}
+        on:change={() => {
+          if (!combatant.min_count) combatant.min_count = 1;
+          if (!combatant.max_count || combatant.min_count > combatant.max_count)
+            combatant.max_count = combatant.min_count;
+        }}
         min="1"
-        max={combatant.max_count}
+        max="99"
         step="1"
       />
       &ndash;
       <input
         type="number"
         bind:value={combatant.max_count}
-        min={combatant.min_count}
+        on:change={() => {
+          if (!combatant.max_count) combatant.max_count = 1;
+          if (!combatant.min_count || combatant.max_count < combatant.min_count)
+            combatant.min_count = combatant.max_count;
+        }}
         maxlength="2"
+        min="1"
         max="99"
         step="1"
       />

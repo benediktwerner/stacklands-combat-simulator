@@ -23,6 +23,7 @@ export interface CombatantStats {
     hp: number;
     attack_speed: number;
     hit_chance: number;
+    stun_chance: number;
     min_damage: number;
     max_damage: number;
 }

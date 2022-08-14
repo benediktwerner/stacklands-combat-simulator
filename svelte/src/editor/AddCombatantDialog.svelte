@@ -17,6 +17,7 @@
     hit_chance: 50,
     min_damage: 1,
     max_damage: 3,
+    stun_chance: 0,
   };
   let custom: Combatant | null = null;
 </script>
@@ -85,12 +86,26 @@
         />
       </td>
     </tr>
+    <tr>
+      <td>Stun Chance:</td>
+      <td
+        ><input
+          type="number"
+          min="0"
+          step="1"
+          max="99"
+          bind:value={custom.stun_chance}
+        /> %</td
+      >
+    </tr>
   </table>
   <div
     class="button-container"
     on:click={() => {
+      if (!custom) return;
       custom.attack_speed *= 10;
       custom.hit_chance /= 100;
+      custom.stun_chance /= 100;
       if (!custom.name) custom.name = 'Custom';
       add(custom);
     }}

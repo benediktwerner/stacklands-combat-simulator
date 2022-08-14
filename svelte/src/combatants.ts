@@ -9,6 +9,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'Dog',
+    stun_chance: 0,
   },
   {
     name: 'Explorer',
@@ -18,6 +19,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Explorer',
+    stun_chance: 0,
   },
   {
     name: 'Fisher',
@@ -27,6 +29,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Fisherman',
+    stun_chance: 0,
   },
   {
     name: 'Friendly Pirate',
@@ -36,6 +39,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'FriendlyPirate',
+    stun_chance: 0.15,
   },
   {
     name: 'Militia',
@@ -45,6 +49,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'Militia',
+    stun_chance: 0,
   },
   {
     name: 'Swordsman',
@@ -54,6 +59,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 2.0,
     max_damage: 2.0,
     image_name: 'Swordman',
+    stun_chance: 0,
   },
   {
     name: 'Trained Monkey',
@@ -63,6 +69,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'TrainedMonkey',
+    stun_chance: 0,
   },
   {
     name: 'Villager',
@@ -72,6 +79,7 @@ export const VILLAGERS: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Villager',
+    stun_chance: 0,
   },
 ];
 
@@ -84,6 +92,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 2.0,
     max_damage: 4.0,
     image_name: 'Bear',
+    stun_chance: 0.1,
   },
   {
     name: 'Demon',
@@ -93,6 +102,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 3.0,
     image_name: 'Demon',
+    stun_chance: 0,
   },
   {
     name: 'Demon Lord',
@@ -102,6 +112,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 3.0,
     image_name: 'DemonLord',
+    stun_chance: 0,
   },
   {
     name: 'Giant Rat',
@@ -111,6 +122,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 2.0,
     max_damage: 2.0,
     image_name: 'Big-Rat',
+    stun_chance: 0,
   },
   {
     name: 'Goblin',
@@ -120,6 +132,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'Goblin',
+    stun_chance: 0,
   },
   {
     name: 'Kraken',
@@ -129,6 +142,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Kraken',
+    stun_chance: 0.1,
   },
   {
     name: 'Momma Crab',
@@ -138,6 +152,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'MammaCrab',
+    stun_chance: 0.2,
   },
   {
     name: 'Pirate',
@@ -147,6 +162,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'AngryPirate',
+    stun_chance: 0.2,
   },
   {
     name: 'Rat',
@@ -156,6 +172,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Small-Rat',
+    stun_chance: 0,
   },
   {
     name: 'Seagull',
@@ -165,6 +182,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Seagull',
+    stun_chance: 0,
   },
   {
     name: 'Skeleton',
@@ -174,6 +192,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 2.0,
     image_name: 'Skeleton',
+    stun_chance: 0.1,
   },
   {
     name: 'Slime',
@@ -183,6 +202,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Big-Slime',
+    stun_chance: 0,
   },
   {
     name: 'Small Slime',
@@ -192,6 +212,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Small-Slime',
+    stun_chance: 0,
   },
   {
     name: 'Snake',
@@ -201,6 +222,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Snake',
+    stun_chance: 0,
   },
   {
     name: 'Tentacle',
@@ -210,6 +232,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 1.0,
     image_name: 'Tentacle',
+    stun_chance: 0.2,
   },
   {
     name: 'Tiger',
@@ -219,6 +242,7 @@ export const ENEMIES: Combatant[] = [
     min_damage: 2.0,
     max_damage: 3.0,
     image_name: 'Tiger',
+    stun_chance: 0.2,
   },
   {
     name: 'Wolf',
@@ -228,5 +252,6 @@ export const ENEMIES: Combatant[] = [
     min_damage: 1.0,
     max_damage: 3.0,
     image_name: 'Wolf',
+    stun_chance: 0,
   },
 ];

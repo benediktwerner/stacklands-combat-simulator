@@ -25,6 +25,10 @@
         : ''}
     </td>
   </tr>
+  <tr>
+    <td>Stun Chance:</td>
+    <td> {combatant.stun_chance * 100}%</td>
+  </tr>
 </table>
 
 <style>

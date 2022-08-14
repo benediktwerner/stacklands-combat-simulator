@@ -6,11 +6,15 @@ use tsify::Tsify;
 
 pub mod js;
 
+const STUN_TIME: u32 = 51; // centi-seconds
+const ATTACK_TIME: u32 = 2; // centi-seconds
+
 #[derive(Clone, Copy, Debug, Deserialize, Tsify)]
 pub struct CombatantStats {
     pub hp: u32,
     pub attack_speed: u32, // in centi-seconds
-    pub hit_chance: f64,
+    pub hit_chance: f64,   // 0-1
+    pub stun_chance: f64,  // 0-1
     pub min_damage: u32,
     pub max_damage: u32,
 }
@@ -22,6 +26,7 @@ struct Combatant {
     attack_cooldown: u32,
     getting_attacked: bool,
     attacking_timer: u32,
+    stunned_timer: u32,
     target: Option<Rc<RefCell<Combatant>>>,
 }
 
@@ -39,6 +44,7 @@ impl CombatantStats {
             hp: 7,
             attack_speed: 15,
             hit_chance: 0.9,
+            stun_chance: 0.0,
             min_damage: 2,
             max_damage: 2,
         }
@@ -49,6 +55,7 @@ impl CombatantStats {
             hp: 666,
             attack_speed: 15,
             hit_chance: 0.75,
+            stun_chance: 0.0,
             min_damage: 1,
             max_damage: 3,
         }
@@ -63,11 +70,16 @@ impl Combatant {
             attack_cooldown: stats.attack_speed,
             getting_attacked: false,
             attacking_timer: 0,
+            stunned_timer: 0,
             target: None,
         }
     }
 
     fn update(&mut self, rng: &mut SmallRng, enemies: &mut Vec<Rc<RefCell<Combatant>>>) -> bool {
+        if self.stunned_timer > 0 {
+            self.stunned_timer -= 1;
+        }
+
         if self.attack_cooldown > 0 {
             self.attack_cooldown -= 1;
             if self.attack_cooldown > 0 {
@@ -89,7 +101,7 @@ impl Combatant {
     }
 
     fn attack(&mut self, rng: &mut SmallRng, enemies: &mut Vec<Rc<RefCell<Combatant>>>) -> bool {
-        if self.getting_attacked {
+        if self.getting_attacked || self.stunned_timer > 0 {
             return false;
         }
 
@@ -99,7 +111,7 @@ impl Combatant {
         };
 
         let target = unsafe { enemies.get_unchecked(target_index) };
-        self.attacking_timer = 2;
+        self.attacking_timer = ATTACK_TIME;
 
         if rng.gen_bool(self.stats.hit_chance) {
             let dmg = self.stats.gen_dmg(rng);
@@ -114,6 +126,9 @@ impl Combatant {
             let mut target = target.borrow_mut();
             target.getting_attacked = true;
             target.hp -= dmg;
+            if self.stats.stun_chance > 0.0 && rng.gen_bool(self.stats.stun_chance) {
+                target.stunned_timer = STUN_TIME;
+            }
             false
         } else {
             self.target = Some(Rc::clone(target));

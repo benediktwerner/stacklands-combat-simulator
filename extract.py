@@ -4,7 +4,7 @@ import os, re, json
 
 outs = []
 
-# PREFIX = "Misc_"
+PREFIX = "Misc_"
 PREFIX = "Enemy_"
 IMAGE_MAP = {
     "Swordsman": "Swordman",
@@ -61,7 +61,7 @@ for fname in os.listdir("data"):
             "min_damage": mind,
             "max_damage": maxd,
             "image_name": image,
-            # "stun_chance": int(stun[0]) / 100 if stun else 0,
+            "stun_chance": int(stun[0]) / 100 if stun else 0,
         }
     )
 
