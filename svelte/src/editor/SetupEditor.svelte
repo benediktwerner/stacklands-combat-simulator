@@ -1,9 +1,9 @@
 <script lang="ts">
   import { getContext } from 'svelte';
-  import AddCombatantDialog from './AddCombatantDialog.svelte';
-
+  import plusImg from '../assets/plus.png';
   import type { SimpleModalContext } from '../simple-modal';
   import type { CombatantSetup } from '../types';
+  import AddCombatantDialog from './AddCombatantDialog.svelte';
   import CombatantCard from './CombatantCard.svelte';
 
   export let villagerSetup: CombatantSetup[];
@@ -50,7 +50,7 @@
 
   <button class="new" on:click={() => addCard(false)}>
     <img
-      src="/images/plus.png"
+      src={plusImg}
       alt="Add new combatant"
       title="Add combatant"
       width="100"
@@ -72,7 +72,7 @@
 
   <button class="new" on:click={() => addCard(true)}>
     <img
-      src="/images/plus.png"
+      src={plusImg}
       alt="Add new combatant"
       title="Add combatant"
       width="100"
