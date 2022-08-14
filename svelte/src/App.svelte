@@ -6,29 +6,31 @@
   import SimulationSettings from './sidebar/SimulationSettings.svelte';
   import ViewSettings from './sidebar/ViewSettings.svelte';
   import type { CombatantSetup } from './types';
+  import { localStorageStore } from './utils';
   import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
   import SimulationWorker from './worker?worker';
 
-  let monthLength = 90;
-  let monthStart = 0;
-  let iterations = 1_000;
-  let findMonthStart = true;
-  let findMonthStartStep = 15;
+  let monthLength = localStorageStore('monthLength', 90);
+  let monthStart = localStorageStore('monthStart', 0);
+  let iterations = localStorageStore('iterations', 1_000);
+  let findMonthStart = localStorageStore('findMonthStart', true);
+  let findMonthStartStep = localStorageStore('findMonthStartStep', 15);
+  let onlyShowOptimal = localStorageStore('onlyShowOptimal', true);
+
   let running = false;
   let progress = 0;
-  let onlyShowOptimal = true;
 
   let tab: 'editor' | 'results' = 'editor';
 
-  let villagerSetup: CombatantSetup[] = [
+  let villagerSetup = localStorageStore<CombatantSetup[]>('villagerSetup', [
     { ...VILLAGERS[5], count: 8, vary: true, min_count: 8, max_count: 20 },
-  ];
-  let enemySetup: CombatantSetup[] = [
+  ]);
+  let enemySetup = localStorageStore<CombatantSetup[]>('enemySetup', [
     {
       ...ENEMIES[2],
       count: 1,
     },
-  ];
+  ]);
 
   let worker: Worker | null = null;
   let results: StatsWithSetup[] = [];
@@ -74,14 +76,14 @@
     const msg: MsgToWorker = {
       type: 'simulate',
       setup: {
-        iterations,
-        villagerSetup,
-        enemySetup,
-        monthLength,
-        monthStart,
+        iterations: $iterations,
+        villagerSetup: $villagerSetup,
+        enemySetup: $enemySetup,
+        monthLength: $monthLength,
+        monthStart: $monthStart,
       },
-      findMonthStart,
-      findMonthStartStep,
+      findMonthStart: $findMonthStart,
+      findMonthStartStep: $findMonthStartStep,
     };
     worker.postMessage(msg);
   };
@@ -104,12 +106,15 @@
     <h1>Stacklands Combat Simulator</h1>
     <main class="card">
       {#if tab === 'editor'}
-        <SetupEditor bind:villagerSetup bind:enemySetup />
+        <SetupEditor
+          bind:villagerSetup={$villagerSetup}
+          bind:enemySetup={$enemySetup}
+        />
       {:else}
         <Results
           {results}
           bind:this={resultsWidget}
-          onlyShowOptimal={onlyShowOptimal && findMonthStart}
+          onlyShowOptimal={$onlyShowOptimal && $findMonthStart}
         />
       {/if}
     </main>
@@ -123,20 +128,23 @@
     </nav>
     <aside class="settings-simulation card">
       <SimulationSettings
-        bind:iterations
-        bind:monthLength
-        bind:monthStart
-        bind:findMonthStart
-        bind:findMonthStartStep
-        {villagerSetup}
-        {enemySetup}
+        bind:iterations={$iterations}
+        bind:monthLength={$monthLength}
+        bind:monthStart={$monthStart}
+        bind:findMonthStart={$findMonthStart}
+        bind:findMonthStartStep={$findMonthStartStep}
+        villagerSetup={$villagerSetup}
+        enemySetup={$enemySetup}
         {running}
         {cancel}
         {run}
       />
     </aside>
     <aside class="settings-view card">
-      <ViewSettings bind:onlyShowOptimal {findMonthStart} />
+      <ViewSettings
+        bind:onlyShowOptimal={$onlyShowOptimal}
+        findMonthStart={$findMonthStart}
+      />
     </aside>
 
     <a

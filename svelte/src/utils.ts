@@ -1,3 +1,4 @@
+import { writable, type Writable } from 'svelte/store';
 import type { CombatantSetup } from './types';
 
 export const sleep = (): Promise<void> => {
@@ -12,4 +13,30 @@ export const calculateVariations = (cs: CombatantSetup[]): number => {
     }
   }
   return result;
+};
+
+export const localStorageStore = <T>(key: string, def: T): Writable<T> => {
+  const val = localStorage.getItem(key);
+  if (val) {
+    try {
+      def = JSON.parse(val);
+    } catch {}
+  }
+  const store = writable(def);
+  return {
+    set(value) {
+      store.set(value);
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+    update(updater) {
+      store.update((v) => {
+        const r = updater(v);
+        localStorage.setItem(key, JSON.stringify(r));
+        return r;
+      });
+    },
+    subscribe(run, invalidate?) {
+      return store.subscribe(run, invalidate);
+    },
+  };
 };
