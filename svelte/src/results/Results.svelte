@@ -5,7 +5,7 @@
 
   export let results: StatsWithSetup[];
 
-  let resultIndex = null;
+  let resultIndex: number | null = null;
 
   $: showSetup =
     results.length > 0 &&

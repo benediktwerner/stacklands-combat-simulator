@@ -11,7 +11,7 @@
   let tooltip: HTMLElement;
 
   const tooltipMove = (e: MouseEvent) => {
-    let target = e.target as HTMLElement;
+    let target = e.target as HTMLElement | null;
     if (target && !target.dataset.title) target = target.parentElement;
     if (!target || !target.dataset.title) {
       tooltip.classList.add('hidden');

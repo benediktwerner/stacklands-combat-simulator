@@ -28,7 +28,7 @@
     },
   ];
 
-  let worker: Worker = null;
+  let worker: Worker | null = null;
   let results: StatsWithSetup[] = [];
   let resultsWidget: Results | undefined;
 
@@ -93,7 +93,7 @@
     if (worker !== null) {
       worker.postMessage({ type: 'cancel' } as MsgToWorker);
       terminateWorkerTimeout = setTimeout(() => {
-        worker.terminate();
+        worker?.terminate();
         worker = null;
         progress = 100;
       }, 1000);
