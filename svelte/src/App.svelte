@@ -36,13 +36,6 @@
 
   let terminateWorkerTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const addResult = (result?: StatsWithSetup) => {
-    if (result) {
-      results.push(result);
-      results = results;
-    }
-  };
-
   const run = () => {
     tab = 'results';
 
@@ -57,11 +50,14 @@
         const msg = e.data;
         switch (msg.type) {
           case 'progress':
-            progress = msg.progress;
-            addResult(msg.newResult);
+            progress += msg.progress;
+            if (msg.newResult) {
+              if (msg.replace) results[results.length - 1] = msg.newResult;
+              else results.push(msg.newResult);
+              results = results;
+            }
             break;
           case 'done':
-            addResult(msg.newResult);
             progress = 100;
             running = false;
             break;

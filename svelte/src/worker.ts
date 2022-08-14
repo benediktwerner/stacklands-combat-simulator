@@ -7,9 +7,14 @@ import init, {
 } from './wasm/stacklands_combat_simulator.js';
 
 export type MsgFromWorker =
-  | { type: 'done'; newResult?: StatsWithSetup }
+  | { type: 'done' }
   | { type: 'cancelled' }
-  | { type: 'progress'; progress: number; newResult?: StatsWithSetup };
+  | {
+      type: 'progress';
+      progress: number;
+      newResult?: StatsWithSetup;
+      replace?: boolean;
+    };
 
 export type MsgToWorker =
   | { type: 'cancel' }
@@ -37,15 +42,65 @@ const send = (msg: MsgFromWorker) => {
   postMessage(msg);
 };
 
-const sim = (setup: SimulateSetup): StatsWithSetup => {
-  const res = simulate(
-    setup.iterations,
-    createSetup(setup.villagerSetup),
-    createSetup(setup.enemySetup),
-    setup.monthStart,
-    setup.monthLength
-  );
-  return { ...res, ...setup };
+const STEP_ITERATIONS = 1000;
+
+const addToResult = (old: StatsWithSetup, toAdd: Stats) => {
+  old.iters += toAdd.iters;
+  old.wins += toAdd.wins;
+  old.total_length += toAdd.total_length;
+  old.longest = Math.max(old.longest, toAdd.longest);
+  for (const [i, v] of toAdd.enemy_hp.entries()) {
+    old.enemy_hp[i] += v;
+  }
+  for (const [i, v] of toAdd.village_survivors.entries()) {
+    old.village_survivors[i] += v;
+  }
+};
+
+const sim = (
+  setup: SimulateSetup,
+  progressUnitOuter: number
+): StatsWithSetup => {
+  const doSim = (iters: number, setup: SimulateSetup) => {
+    const res = simulate(
+      iters,
+      createSetup(setup.villagerSetup),
+      createSetup(setup.enemySetup),
+      setup.monthStart,
+      setup.monthLength
+    );
+    return { ...res, ...setup };
+  };
+
+  const progressUnit =
+    progressUnitOuter / Math.ceil(setup.iterations / STEP_ITERATIONS);
+
+  const newResult = doSim(Math.min(setup.iterations, 1000), setup);
+  send({
+    type: 'progress',
+    progress: progressUnit,
+    newResult,
+  });
+
+  for (
+    let iters = STEP_ITERATIONS;
+    iters < setup.iterations;
+    iters += STEP_ITERATIONS
+  ) {
+    const newPart = doSim(
+      iters > setup.iterations ? iters - setup.iterations : STEP_ITERATIONS,
+      setup
+    );
+    addToResult(newResult, newPart);
+    send({
+      type: 'progress',
+      progress: progressUnit,
+      newResult,
+      replace: true,
+    });
+  }
+
+  return newResult;
 };
 
 const createSetup = (combatants: CombatantSetup[]): CombatantStats[] => {
@@ -89,27 +144,21 @@ function* generateVariations(
 const simulateFindMonths = async (
   setup: SimulateSetup,
   findMonthStartStep: number,
-  progress: number,
   progressUnitOuter: number
-): Promise<number> => {
+): Promise<void> => {
   setup.monthStart = 0;
-  const firstResult = sim(setup);
+  const initialProgressUnit =
+    progressUnitOuter / Math.floor(setup.monthLength / findMonthStartStep);
+  const firstResult = sim(setup, initialProgressUnit);
 
   const first = Math.max(
     findMonthStartStep,
     findMonthStartStep *
       Math.floor((setup.monthLength - firstResult.longest) / findMonthStartStep)
   );
-  const progressUnit =
-    (findMonthStartStep * progressUnitOuter) /
-    (setup.monthLength - first + findMonthStartStep);
-  progress += progressUnit;
-
-  send({
-    type: 'progress',
-    progress,
-    newResult: firstResult,
-  });
+  const progressLeft = progressUnitOuter - initialProgressUnit;
+  const stepsToDo = (setup.monthLength - first) / findMonthStartStep;
+  const progressUnit = progressLeft / stepsToDo;
 
   for (
     setup.monthStart = first;
@@ -118,18 +167,8 @@ const simulateFindMonths = async (
   ) {
     await sleep();
     if (!running) break;
-
-    const res = sim(setup);
-
-    progress += progressUnit;
-    send({
-      type: 'progress',
-      progress,
-      newResult: res,
-    });
+    sim(setup, progressUnit);
   }
-
-  return progress;
 };
 
 const startSimulation = async (
@@ -150,33 +189,19 @@ const startSimulation = async (
       calculateVariations(setup.villagerSetup) *
       calculateVariations(setup.enemySetup);
     const progressUnit = 100 / variations;
-    let progress = 0;
     for (const _ of generateVariations(setup.villagerSetup, setup.enemySetup)) {
       await sleep();
       if (!running) break;
       if (findMonthStart) {
-        progress = await simulateFindMonths(
-          setup,
-          findMonthStartStep,
-          progress,
-          progressUnit
-        );
+        await simulateFindMonths(setup, findMonthStartStep, progressUnit);
       } else {
-        progress += progressUnit;
-        send({
-          type: 'progress',
-          progress,
-          newResult: sim(setup),
-        });
+        sim(setup, progressUnit);
       }
     }
-    send({ type: 'done' });
   } else {
-    send({
-      type: 'done',
-      newResult: sim(setup),
-    });
+    sim(setup, 100);
   }
+  send({ type: 'done' });
 
   running = false;
 };
