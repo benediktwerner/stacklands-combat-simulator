@@ -7,19 +7,20 @@
   import SetupEditor from './editor/SetupEditor.svelte';
   import type { CombatantSetup } from './types';
   import { ENEMIES, VILLAGERS } from './combatants';
-  import type { CombatantStats } from './wasm/stacklands_combat_simulator';
 
-  let monthLength = 120;
+  let monthLength = 90;
   let monthStart = 0;
   let iterations = 1_000;
   let findMonthStart = true;
-  let findMonthStartStep = 5;
+  let findMonthStartStep = 15;
   let running = false;
   let progress = 0;
 
   let tab: 'editor' | 'results' = 'editor';
 
-  let villagerSetup: CombatantSetup[] = [{ ...VILLAGERS[5], count: 8 }];
+  let villagerSetup: CombatantSetup[] = [
+    { ...VILLAGERS[5], count: 8, vary: true, min_count: 8, max_count: 20 },
+  ];
   let enemySetup: CombatantSetup[] = [
     {
       ...ENEMIES[2],
@@ -38,14 +39,6 @@
       results.push(result);
       results = results;
     }
-  };
-
-  const createSetup = (combatants: CombatantSetup[]): CombatantStats[] => {
-    const result = [];
-    for (const c of combatants) {
-      for (let i = 0; i < c.count; i++) result.push(c);
-    }
-    return result;
   };
 
   const run = () => {
@@ -74,6 +67,7 @@
             if (terminateWorkerTimeout) {
               clearTimeout(terminateWorkerTimeout);
               terminateWorkerTimeout = null;
+              progress = 100;
             }
             break;
         }
@@ -83,8 +77,8 @@
       type: 'simulate',
       setup: {
         iterations,
-        villagerSetup: createSetup(villagerSetup),
-        enemySetup: createSetup(enemySetup),
+        villagerSetup,
+        enemySetup,
         monthLength,
         monthStart,
       },
@@ -101,6 +95,7 @@
       terminateWorkerTimeout = setTimeout(() => {
         worker.terminate();
         worker = null;
+        progress = 100;
       }, 1000);
     }
   };
@@ -131,6 +126,8 @@
         bind:monthStart
         bind:findMonthStart
         bind:findMonthStartStep
+        {villagerSetup}
+        {enemySetup}
         {running}
         {cancel}
         {run}

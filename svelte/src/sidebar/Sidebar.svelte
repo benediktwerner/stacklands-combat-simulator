@@ -1,4 +1,7 @@
 <script lang="ts">
+  import type { CombatantSetup } from '../types';
+  import { calculateVariations } from '../utils';
+
   import SliderWithValue from './SliderWithValue.svelte';
 
   export let monthLength: number;
@@ -7,8 +10,13 @@
   export let findMonthStart: boolean;
   export let findMonthStartStep: number;
   export let running: boolean;
+  export let villagerSetup: CombatantSetup[];
+  export let enemySetup: CombatantSetup[];
   export let cancel: () => any;
   export let run: () => any;
+
+  $: combatantVariations =
+    calculateVariations(villagerSetup) * calculateVariations(enemySetup);
 
   $: {
     const maxStep = Math.floor(monthLength / 2);
@@ -51,7 +59,12 @@
     <tr>
       <td> Month Start: </td>
       <td class="center">
-        <SliderWithValue bind:value={monthStart} max={monthLength} showMax />
+        <SliderWithValue
+          bind:value={monthStart}
+          max={monthLength}
+          step={5}
+          showMax
+        />
       </td>
     </tr>
   {/if}
@@ -65,7 +78,10 @@
     title="How many different possible scenarios will be tested with the current setup (the higher the longer the simulation takes)."
   >
     <td>Max scenarios:</td>
-    <td>{findMonthStart ? Math.floor(monthLength / findMonthStartStep) : 1}</td>
+    <td>
+      {combatantVariations *
+        (findMonthStart ? Math.floor(monthLength / findMonthStartStep) : 1)}
+    </td>
   </tr>
 </table>
 

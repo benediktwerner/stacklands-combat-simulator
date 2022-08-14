@@ -6,4 +6,7 @@ export interface Combatant extends CombatantStats {
 }
 export interface CombatantSetup extends Combatant {
   count: number;
+  min_count?: number;
+  max_count?: number;
+  vary?: boolean;
 }

@@ -1,4 +1,5 @@
-import { sleep } from './utils';
+import type { CombatantSetup } from './types';
+import { calculateVariations, sleep } from './utils';
 import init, {
   simulate,
   type CombatantStats,
@@ -21,8 +22,8 @@ export type MsgToWorker =
 
 export interface SimulateSetup {
   iterations: number;
-  villagerSetup: CombatantStats[];
-  enemySetup: CombatantStats[];
+  villagerSetup: CombatantSetup[];
+  enemySetup: CombatantSetup[];
   monthStart: number;
   monthLength: number;
 }
@@ -39,12 +40,96 @@ const send = (msg: MsgFromWorker) => {
 const sim = (setup: SimulateSetup): StatsWithSetup => {
   const res = simulate(
     setup.iterations,
-    setup.villagerSetup,
-    setup.enemySetup,
+    createSetup(setup.villagerSetup),
+    createSetup(setup.enemySetup),
     setup.monthStart,
     setup.monthLength
   );
   return { ...res, ...setup };
+};
+
+const createSetup = (combatants: CombatantSetup[]): CombatantStats[] => {
+  const result = [];
+  for (const c of combatants) {
+    for (let i = 0; i < c.count; i++) result.push(c);
+  }
+  return result;
+};
+
+function* generateVariations(
+  villagers: CombatantSetup[],
+  enemies: CombatantSetup[],
+  index = 0
+): IterableIterator<void> {
+  for (; index < villagers.length; index++) {
+    const c = villagers[index];
+    if (c.vary) {
+      for (c.count = c.min_count!; c.count <= c.max_count!; c.count++) {
+        for (const s of generateVariations(villagers, enemies, index + 1)) {
+          yield s;
+        }
+      }
+      return;
+    }
+  }
+  for (; index - villagers.length < enemies.length; index++) {
+    const c = enemies[index - villagers.length];
+    if (c.vary) {
+      for (c.count = c.min_count!; c.count <= c.max_count!; c.count++) {
+        for (const s of generateVariations(villagers, enemies, index + 1)) {
+          yield s;
+        }
+      }
+      return;
+    }
+  }
+  yield;
+}
+
+const simulateFindMonths = async (
+  setup: SimulateSetup,
+  findMonthStartStep: number,
+  progress: number,
+  progressUnitOuter: number
+): Promise<number> => {
+  setup.monthStart = 0;
+  const firstResult = sim(setup);
+
+  const first = Math.max(
+    findMonthStartStep,
+    findMonthStartStep *
+      Math.floor((setup.monthLength - firstResult.longest) / findMonthStartStep)
+  );
+  const progressUnit =
+    (findMonthStartStep * progressUnitOuter) /
+    (setup.monthLength - first + findMonthStartStep);
+  progress += progressUnit;
+
+  send({
+    type: 'progress',
+    progress,
+    newResult: firstResult,
+  });
+
+  for (
+    setup.monthStart = first;
+    setup.monthStart < setup.monthLength;
+    setup.monthStart += findMonthStartStep
+  ) {
+    await sleep();
+    if (!running) break;
+
+    const res = sim(setup);
+
+    progress += progressUnit;
+    send({
+      type: 'progress',
+      progress,
+      newResult: res,
+    });
+  }
+
+  return progress;
 };
 
 const startSimulation = async (
@@ -54,48 +139,37 @@ const startSimulation = async (
 ) => {
   await initPromise;
 
-  let result: StatsWithSetup;
   running = true;
 
-  if (findMonthStart) {
-    setup.monthStart = 0;
-    result = sim(setup);
-
-    const first = Math.max(
-      findMonthStartStep,
-      findMonthStartStep *
-        Math.floor((setup.monthLength - result.longest) / findMonthStartStep)
-    );
-    const progressUnit =
-      (findMonthStartStep * 100) / (setup.monthLength - first + 1);
-    let progress = progressUnit;
-
-    send({
-      type: 'progress',
-      progress,
-      newResult: result,
-    });
-
-    for (
-      setup.monthStart = first;
-      setup.monthStart < setup.monthLength;
-      setup.monthStart += findMonthStartStep
-    ) {
+  if (
+    findMonthStart ||
+    setup.enemySetup.some((c) => c.vary) ||
+    setup.villagerSetup.some((c) => c.vary)
+  ) {
+    const variations =
+      calculateVariations(setup.villagerSetup) *
+      calculateVariations(setup.enemySetup);
+    const progressUnit = 100 / variations;
+    let progress = 0;
+    for (const _ of generateVariations(setup.villagerSetup, setup.enemySetup)) {
       await sleep();
       if (!running) break;
-
-      const res = sim(setup);
-
-      if (res.wins > result.wins) result = res;
-
-      progress += progressUnit;
-      send({
-        type: 'progress',
-        progress,
-        newResult: res,
-      });
+      if (findMonthStart) {
+        progress = await simulateFindMonths(
+          setup,
+          findMonthStartStep,
+          progress,
+          progressUnit
+        );
+      } else {
+        progress += progressUnit;
+        send({
+          type: 'progress',
+          progress,
+          newResult: sim(setup),
+        });
+      }
     }
-
     send({ type: 'done' });
   } else {
     send({

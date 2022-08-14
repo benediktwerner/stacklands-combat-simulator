@@ -43,7 +43,7 @@
 <div class="row">
   {#each villagerSetup as villager}
     <CombatantCard
-      combatant={villager}
+      bind:combatant={villager}
       remove={(c) => (villagerSetup = villagerSetup.filter((x) => x !== c))}
     />
   {/each}
@@ -64,7 +64,7 @@
 <div class="row">
   {#each enemySetup as enemy}
     <CombatantCard
-      combatant={enemy}
+      bind:combatant={enemy}
       isEnemy={true}
       remove={(c) => (enemySetup = enemySetup.filter((x) => x !== c))}
     />
