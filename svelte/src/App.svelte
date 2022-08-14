@@ -1,12 +1,12 @@
 <script lang="ts">
   import Modal from 'svelte-simple-modal';
+  import { ENEMIES, VILLAGERS } from './combatants';
+  import SetupEditor from './editor/SetupEditor.svelte';
   import Results from './results/Results.svelte';
   import Sidebar from './sidebar/Sidebar.svelte';
-  import SimulationWorker from './worker?worker';
-  import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
-  import SetupEditor from './editor/SetupEditor.svelte';
   import type { CombatantSetup } from './types';
-  import { ENEMIES, VILLAGERS } from './combatants';
+  import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
+  import SimulationWorker from './worker?worker';
 
   let monthLength = 90;
   let monthStart = 0;

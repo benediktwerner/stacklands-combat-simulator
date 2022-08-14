@@ -1,7 +1,7 @@
 <script lang="ts">
+  import type { StatsWithSetup } from '../worker';
   import ResultGraph from './ResultGraph.svelte';
   import ResultRow from './ResultRow.svelte';
-  import type { StatsWithSetup } from '../worker';
 
   export let results: StatsWithSetup[];
 

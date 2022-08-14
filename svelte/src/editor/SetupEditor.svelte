@@ -2,9 +2,9 @@
   import { getContext } from 'svelte';
   import AddCombatantDialog from './AddCombatantDialog.svelte';
 
-  import CombatantCard from './CombatantCard.svelte';
   import type { SimpleModalContext } from '../simple-modal';
   import type { CombatantSetup } from '../types';
+  import CombatantCard from './CombatantCard.svelte';
 
   export let villagerSetup: CombatantSetup[];
   export let enemySetup: CombatantSetup[];

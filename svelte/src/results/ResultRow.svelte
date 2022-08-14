@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { CombatantSetup } from 'src/types';
-
   import type { StatsWithSetup } from '../worker';
 
   export let result: StatsWithSetup;
