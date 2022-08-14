@@ -104,7 +104,10 @@ impl Combatant {
         if rng.gen_bool(self.stats.hit_chance) {
             let dmg = self.stats.gen_dmg(rng);
             if target.borrow().hp <= dmg {
-                enemies.swap_remove(target_index);
+                let target = enemies.swap_remove(target_index);
+                if let Some(t) = target.borrow_mut().target.as_deref() {
+                    t.borrow_mut().getting_attacked = false;
+                }
                 return enemies.is_empty();
             }
             self.target = Some(Rc::clone(target));
@@ -124,6 +127,7 @@ impl Combatant {
 pub struct Stats {
     pub iters: u32,
     pub wins: u32,
+    pub timeouts: u32,
     pub total_length: u64,
     pub longest: u32,
     pub village_survivors: Vec<u32>,
@@ -135,6 +139,7 @@ impl Stats {
         Self {
             iters,
             wins: 0,
+            timeouts: 0,
             total_length: 0,
             longest: 0,
             village_survivors: vec![0; villagers],
@@ -200,6 +205,9 @@ pub fn simulate(
 
         'outer: loop {
             time += 1;
+            if time > 100_000 {
+                break;
+            }
 
             if time % month_length == 0 {
                 for v in &villagers {
@@ -237,9 +245,11 @@ pub fn simulate(
         if enemies.is_empty() {
             stats.wins += 1;
             stats.village_survivors[villagers.len() - 1] += 1;
-        } else {
+        } else if villagers.is_empty() {
             let hp = enemies.iter().map(|e| e.borrow().hp).sum::<u32>() as usize - 1;
             stats.enemy_hp[9 - hp * 10 / total_enemy_hp] += 1;
+        } else {
+            stats.timeouts += 1;
         }
     }
 

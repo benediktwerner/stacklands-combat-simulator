@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use wasm_bindgen::{prelude::*, JsCast};
 
 use crate::CombatantStats;
@@ -31,4 +33,8 @@ pub fn simulate(
     JsValue::from_serde(&stats)
         .map(JsValue::unchecked_into)
         .map_err(|e| e.to_string().into())
+}
+
+pub fn log(s: impl Display) {
+    js_sys::eval(&format!(r#"console.log("{s}")"#)).unwrap();
 }

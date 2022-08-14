@@ -12,6 +12,7 @@ export function simulate(iters: number, villager_setup: CombatantStats[], enemy_
 export interface Stats {
     iters: number;
     wins: number;
+    timeouts: number;
     total_length: number;
     longest: number;
     village_survivors: number[];
