@@ -24,6 +24,7 @@
   --highlight-hover: #747bff;
   --bad: #d85a5c;
   --good: #a1cc74;
+  --red: #e14649;
   --villager: #f1e3ac;
 }
 
@@ -85,4 +86,10 @@ button:disabled {
 }
 .button-primary:hover {
   background-color: var(--highlight-hover);
+}
+.button-cancel {
+  background-color: var(--red);
+}
+.button-cancel:hover {
+  background-color: var(--bad);
 }

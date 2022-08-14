@@ -24,7 +24,7 @@
   }
 </script>
 
-<h3>Settings</h3>
+<h3>Simulation Settings</h3>
 
 <table>
   <tr>
@@ -86,7 +86,11 @@
 </table>
 
 <div class="button-container">
-  <button class="button button-primary" on:click={running ? cancel : run}>
+  <button
+    class="button button-primary"
+    class:button-cancel={running}
+    on:click={running ? cancel : run}
+  >
     {running ? 'Cancel' : 'Simulate'}
   </button>
 </div>

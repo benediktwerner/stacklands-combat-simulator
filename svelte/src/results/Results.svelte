@@ -4,9 +4,11 @@
   import ResultRow from './ResultRow.svelte';
 
   export let results: StatsWithSetup[];
+  export let onlyShowOptimal: boolean;
 
   let resultIndex: number | null = null;
 
+  $: resultsFiltered = filter(results, onlyShowOptimal);
   $: showSetup =
     results.length > 0 &&
     (results[0].villagerSetup.some((c) => c.vary) ||
@@ -14,6 +16,45 @@
 
   export const reset = () => {
     resultIndex = null;
+  };
+
+  const sameSetup = (a: StatsWithSetup, b: StatsWithSetup): boolean => {
+    for (const i in a.villagerSetup) {
+      if (a.villagerSetup[i].count !== b.villagerSetup[i].count) return false;
+    }
+    for (const i in a.enemySetup) {
+      if (a.enemySetup[i].count !== b.enemySetup[i].count) return false;
+    }
+    return true;
+  };
+
+  const better = (n: StatsWithSetup, old: StatsWithSetup): boolean => {
+    if (n.wins > old.wins) return true;
+    if (n.wins < old.wins) return false;
+    const nSurv = n.village_survivors
+      .map((v, i) => v * (i + 1))
+      .reduce((a, b) => a + b, 0);
+    const oSurv = old.village_survivors
+      .map((v, i) => v * (i + 1))
+      .reduce((a, b) => a + b, 0);
+    return nSurv > oSurv;
+  };
+
+  const filter = (
+    results: StatsWithSetup[],
+    onlyOpt: boolean
+  ): StatsWithSetup[] => {
+    if (!onlyOpt) return results;
+    let last = null;
+    let out = [];
+    for (const res of results) {
+      if (!last || !sameSetup(last, res)) {
+        if (last) out.push(last);
+        last = res;
+      } else if (better(res, last)) last = res;
+    }
+    if (last) out.push(last);
+    return out;
   };
 </script>
 
@@ -27,8 +68,9 @@
   <span>Avg Length (s)</span>
   <span>Longest (s)</span>
 </b>
-{#if resultIndex !== null || results.length === 1}
-  {@const result = resultIndex === null ? results[0] : results[resultIndex]}
+{#if resultIndex !== null || resultsFiltered.length === 1}
+  {@const result =
+    resultIndex === null ? resultsFiltered[0] : resultsFiltered[resultIndex]}
   <div
     class="row"
     class:showSetup
@@ -40,7 +82,7 @@
   <br />
   <ResultGraph {result} />
 {:else}
-  {#each results as result, index}
+  {#each resultsFiltered as result, index}
     <div class="row" class:showSetup on:click={() => (resultIndex = index)}>
       <ResultRow {result} {showSetup} />
     </div>

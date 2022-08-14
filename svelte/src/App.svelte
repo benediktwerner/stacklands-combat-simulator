@@ -3,7 +3,8 @@
   import { ENEMIES, VILLAGERS } from './combatants';
   import SetupEditor from './editor/SetupEditor.svelte';
   import Results from './results/Results.svelte';
-  import Sidebar from './sidebar/Sidebar.svelte';
+  import SimulationSettings from './sidebar/SimulationSettings.svelte';
+  import ViewSettings from './sidebar/ViewSettings.svelte';
   import type { CombatantSetup } from './types';
   import type { MsgFromWorker, MsgToWorker, StatsWithSetup } from './worker';
   import SimulationWorker from './worker?worker';
@@ -15,6 +16,7 @@
   let findMonthStartStep = 15;
   let running = false;
   let progress = 0;
+  let onlyShowOptimal = true;
 
   let tab: 'editor' | 'results' = 'editor';
 
@@ -108,7 +110,11 @@
       {#if tab === 'editor'}
         <SetupEditor bind:villagerSetup bind:enemySetup />
       {:else}
-        <Results {results} bind:this={resultsWidget} />
+        <Results
+          {results}
+          bind:this={resultsWidget}
+          onlyShowOptimal={onlyShowOptimal && findMonthStart}
+        />
       {/if}
     </main>
     <nav class="card">
@@ -119,8 +125,8 @@
         View Results
       </button>
     </nav>
-    <aside class="card">
-      <Sidebar
+    <aside class="settings-simulation card">
+      <SimulationSettings
         bind:iterations
         bind:monthLength
         bind:monthStart
@@ -132,6 +138,9 @@
         {cancel}
         {run}
       />
+    </aside>
+    <aside class="settings-view card">
+      <ViewSettings bind:onlyShowOptimal />
     </aside>
 
     <a
@@ -154,8 +163,9 @@
     grid-template-areas:
       'heading heading'
       'main nav'
-      'main side';
-    grid-template-rows: 100px 60px auto;
+      'main side1'
+      'main side2';
+    grid-template-rows: 100px 60px auto 1fr;
     grid-template-columns: auto 350px;
     width: 100%;
     min-height: 100vh;
@@ -190,8 +200,11 @@
     background-color: var(--card-bg-hover-hover);
   }
 
-  aside {
-    grid-area: side;
+  .settings-simulation {
+    grid-area: side1;
+  }
+  .settings-view {
+    grid-area: side2;
   }
 
   #source-link {
