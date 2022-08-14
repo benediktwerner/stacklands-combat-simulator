@@ -9,7 +9,7 @@
   <img
     class="img"
     class:enemy={isEnemy}
-    src="/images/{combatant.image_name}.png"
+    src="/stacklands-combat-simulator/images/{combatant.image_name}.png"
     title={combatant.name}
     alt={combatant.name}
   />
