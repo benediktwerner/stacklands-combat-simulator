@@ -23,11 +23,11 @@
   let tab: 'editor' | 'results' = 'editor';
 
   let villagerSetup = localStorageStore<CombatantSetup[]>('villagerSetup', [
-    { ...VILLAGERS[5], count: 8, vary: true, min_count: 8, max_count: 20 },
+    { ...VILLAGERS[5]!, count: 8, vary: true, min_count: 8, max_count: 20 },
   ]);
   let enemySetup = localStorageStore<CombatantSetup[]>('enemySetup', [
     {
-      ...ENEMIES[2],
+      ...ENEMIES[2]!,
       count: 1,
     },
   ]);

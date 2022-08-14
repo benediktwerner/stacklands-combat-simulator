@@ -117,7 +117,7 @@ function* generateVariations(
   index = 0
 ): IterableIterator<void> {
   for (; index < villagers.length; index++) {
-    const c = villagers[index];
+    const c = villagers[index]!;
     if (c.vary) {
       for (c.count = c.min_count!; c.count <= c.max_count!; c.count++) {
         for (const s of generateVariations(villagers, enemies, index + 1)) {
@@ -128,7 +128,7 @@ function* generateVariations(
     }
   }
   for (; index - villagers.length < enemies.length; index++) {
-    const c = enemies[index - villagers.length];
+    const c = enemies[index - villagers.length]!;
     if (c.vary) {
       for (c.count = c.min_count!; c.count <= c.max_count!; c.count++) {
         for (const s of generateVariations(villagers, enemies, index + 1)) {

@@ -113,6 +113,7 @@
     <button class="button button-primary">Add</button>
   </div>
 {:else}
+  <!-- svelte-ignore a11y-autofocus -->
   <input
     class="search"
     type="text"
