@@ -13,6 +13,7 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+#[allow(clippy::needless_pass_by_value)]
 pub fn simulate(
     iters: u32,
     villager_setup: JsCombatantStatsArray,

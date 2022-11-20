@@ -39,6 +39,7 @@ impl CombatantStats {
         }
     }
 
+    #[must_use]
     pub const fn swordsmen() -> Self {
         CombatantStats {
             hp: 7,
@@ -50,6 +51,7 @@ impl CombatantStats {
         }
     }
 
+    #[must_use]
     pub const fn demon_lord() -> Self {
         CombatantStats {
             hp: 666,
@@ -191,6 +193,7 @@ impl Display for Stats {
     }
 }
 
+#[must_use]
 pub fn simulate(
     iters: u32,
     villager_setup: &[CombatantStats],
