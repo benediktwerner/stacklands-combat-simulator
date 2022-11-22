@@ -8,8 +8,8 @@ use stacklands_combat_simulator::*;
 fn main() {
     let mut args = std::env::args();
     args.next().unwrap();
-    let num = args.next().and_then(|a| a.parse().ok()).unwrap_or(40);
-    let vils = vec![CombatantStats::villager(); num];
+    let num = args.next().and_then(|a| a.parse().ok()).unwrap_or(10);
+    let vils = vec![CombatantStats::ninja(); num];
 
     let stats = simulate(
         1_000,

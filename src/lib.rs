@@ -12,8 +12,8 @@ pub mod js;
 
 const TIME_STEP: u32 = 5; // time of attack stun
 const ATTACK_STUN_TIME: u32 = 5; // 5 for normal speed, 25 for fast speed
-const MELEE_ATTACK_WINDUP_TIME: u32 = 50;
-const MELEE_ATTACK_WINDDOWN_TIME: u32 = 50;
+const MELEE_ATTACK_WINDUP_TIME: u32 = 15; // 0.5s * 3 (combat speed)
+const MELEE_ATTACK_WINDDOWN_TIME: u32 = 15;
 const MAGIC_WAIT_TIME: u32 = 30;
 const PROJECTILE_SPEED: f32 = 4.5;
 const MAX_DMG: u32 = 6;
