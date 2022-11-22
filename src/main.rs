@@ -6,10 +6,15 @@
 use stacklands_combat_simulator::*;
 
 fn main() {
+    let mut args = std::env::args();
+    args.next().unwrap();
+    let num = args.next().and_then(|a| a.parse().ok()).unwrap_or(40);
+    let vils = vec![CombatantStats::villager(); num];
+
     let stats = simulate(
         1_000,
-        &[CombatantStats::ninja(); 1],
-        &[CombatantStats::giant_rat(); 2],
+        &vils,
+        &[CombatantStats::demon_lord(); 1],
         0,
         1_000_000,
     );

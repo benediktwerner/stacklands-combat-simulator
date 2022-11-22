@@ -8,8 +8,10 @@ use tsify::Tsify;
 
 pub mod js;
 
+// all times are in centi seconds (1 = 0.01s)
+
 const TIME_STEP: u32 = 5; // time of attack stun
-const ATTACK_STUN_TIME: u32 = 5;
+const ATTACK_STUN_TIME: u32 = 5; // 5 for normal speed, 25 for fast speed
 const MELEE_ATTACK_WINDUP_TIME: u32 = 50;
 const MELEE_ATTACK_WINDDOWN_TIME: u32 = 50;
 const MAGIC_WAIT_TIME: u32 = 30;
@@ -45,12 +47,13 @@ impl AttackType {
 #[derive(Clone, Copy, Debug, Deserialize, Tsify)]
 pub struct CombatantStats {
     pub hp: u32,
-    pub attack_speed: u32, // in centi-seconds (1 = 0.01s)
-    pub hit_chance: f64,   // 0-1
+    pub attack_speed: u32,
+    pub hit_chance: f64, // 0-1
     // pub stun_chance: f64,  // 0-1
     pub attack_type: AttackType,
     pub damage: u32,
     pub defense: u32,
+    pub lifesteal_chance: f64,
 }
 
 #[derive(Debug)]
@@ -64,9 +67,23 @@ struct Combatant {
     targets: Vec<Rc<RefCell<Combatant>>>,
     target_index: usize,
     hit: bool,
+    special_hit: bool,
 }
 
 impl CombatantStats {
+    #[must_use]
+    pub const fn villager() -> Self {
+        CombatantStats {
+            hp: 15,
+            attack_speed: 250,
+            hit_chance: 0.7,
+            damage: 2,
+            defense: 1,
+            attack_type: AttackType::Melee,
+            lifesteal_chance: 0.0,
+        }
+    }
+
     #[must_use]
     pub const fn swordsmen() -> Self {
         CombatantStats {
@@ -76,6 +93,7 @@ impl CombatantStats {
             damage: 3,
             defense: 1,
             attack_type: AttackType::Melee,
+            lifesteal_chance: 0.0,
         }
     }
 
@@ -88,6 +106,7 @@ impl CombatantStats {
             damage: 3,
             defense: 1,
             attack_type: AttackType::Ranged,
+            lifesteal_chance: 0.0,
         }
     }
 
@@ -100,6 +119,7 @@ impl CombatantStats {
             damage: 6,
             defense: 4,
             attack_type: AttackType::Melee,
+            lifesteal_chance: 0.1,
         }
     }
 
@@ -112,6 +132,33 @@ impl CombatantStats {
             damage: 3,
             defense: 1,
             attack_type: AttackType::Melee,
+            lifesteal_chance: 0.0,
+        }
+    }
+
+    #[must_use]
+    pub const fn ogre() -> Self {
+        CombatantStats {
+            hp: 30,
+            attack_speed: 250,
+            hit_chance: 0.7,
+            damage: 2,
+            defense: 1,
+            attack_type: AttackType::Melee,
+            lifesteal_chance: 0.0,
+        }
+    }
+
+    #[must_use]
+    pub const fn witch() -> Self {
+        CombatantStats {
+            hp: 300,
+            attack_speed: 250,
+            hit_chance: 0.7,
+            damage: 3,
+            defense: 2,
+            attack_type: AttackType::Magic,
+            lifesteal_chance: 0.0,
         }
     }
 }
@@ -128,6 +175,7 @@ impl Combatant {
             targets: vec![],
             target_index: 0,
             hit: false,
+            special_hit: false,
         }
     }
 
@@ -139,15 +187,15 @@ impl Combatant {
         attack_damage: u32,
         attack_type: AttackType,
         rng: &mut SmallRng,
-    ) -> bool {
+    ) -> (u32, bool) {
         if self.hp == 0 {
-            return false;
+            return (0, false);
         }
 
         self.stunned_timer = ATTACK_STUN_TIME;
 
         if !hit {
-            return false;
+            return (0, false);
         }
 
         let mut dmg = attack_damage;
@@ -162,17 +210,17 @@ impl Combatant {
         } else if rng.gen::<bool>() {
             dmg = 1;
         } else {
-            return false;
+            return (0, false);
         };
 
         if dmg >= self.hp {
             self.hp = 0;
-            return true;
+            return (dmg, true);
         }
 
         self.hp -= dmg;
 
-        false
+        (dmg, false)
     }
 
     fn update(
@@ -224,7 +272,10 @@ impl Combatant {
                 let typ = self.stats.attack_type;
                 let hit = self.hit;
                 let target = &mut self.targets[self.target_index];
-                let killed = target.borrow_mut().damage(hit, dmg, typ, rng);
+                let (dmg, killed) = target.borrow_mut().damage(hit, dmg, typ, rng);
+                if self.special_hit {
+                    self.hp = (self.hp + dmg).min(self.stats.hp);
+                }
                 if killed && kill(enemies, target) {
                     return UpdateResult::CombatEnded;
                 }
@@ -246,7 +297,11 @@ impl Combatant {
                 let killed = {
                     let mut target = target.borrow_mut();
                     target.getting_attacked = false;
-                    target.damage(hit, dmg, typ, rng)
+                    let (dmg, killed) = target.damage(hit, dmg, typ, rng);
+                    if self.special_hit {
+                        self.hp = (self.hp + dmg).min(self.stats.hp);
+                    }
+                    killed
                 };
                 if killed && kill(enemies, target) {
                     return UpdateResult::CombatEnded;
@@ -269,7 +324,14 @@ impl Combatant {
             return UpdateResult::Nothing;
         }
 
-        let (index, target) = find_target(team_index, team_size, rng, enemies);
+        self.special_hit =
+            self.stats.lifesteal_chance > 0.0 && rng.gen_bool(self.stats.lifesteal_chance);
+
+        let (index, target) = if self.special_hit {
+            find_random_target(rng, enemies)
+        } else {
+            find_target(team_index, team_size, rng, enemies)
+        };
         target.borrow_mut().getting_attacked = true;
         self.targets.push(target);
         self.target_index = 0;
@@ -445,6 +507,14 @@ fn find_target(
     let max = f2.ceil() as usize;
 
     let index = rng.gen_range(min..max);
+    (index, Rc::clone(&enemies[index]))
+}
+
+fn find_random_target(
+    rng: &mut SmallRng,
+    enemies: &[Rc<RefCell<Combatant>>],
+) -> (usize, Rc<RefCell<Combatant>>) {
+    let index = rng.gen_range(0..enemies.len());
     (index, Rc::clone(&enemies[index]))
 }
 
