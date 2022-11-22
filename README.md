@@ -4,6 +4,10 @@ Try it out on <https://benediktwerner.github.io/stacklands-combat-simulator/>.
 
 Simulates arbitrary combat scenarios for [Stacklands](https://sokpop.itch.io/stacklands).
 
+## Known inaccuracies
+
+- Missed projectiles can travel longer/shorter
+
 ## Build
 
 - `./build.sh` to build the Simulator component (Rust -> WebAssembly)

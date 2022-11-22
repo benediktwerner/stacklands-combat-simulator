@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss)]
+
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use rand::{rngs::SmallRng, Rng, SeedableRng};
@@ -6,17 +8,49 @@ use tsify::Tsify;
 
 pub mod js;
 
-const STUN_TIME: u32 = 51; // centi-seconds
-const ATTACK_TIME: u32 = 2; // centi-seconds
+const TIME_STEP: u32 = 5; // time of attack stun
+const ATTACK_STUN_TIME: u32 = 5;
+const MELEE_ATTACK_WINDUP_TIME: u32 = 50;
+const MELEE_ATTACK_WINDDOWN_TIME: u32 = 50;
+const MAGIC_WAIT_TIME: u32 = 30;
+const PROJECTILE_SPEED: f32 = 4.5;
+const MAX_DMG: u32 = 6;
+const BATTLE_X_DIFF: f32 = 0.75;
+const BATTLE_Y_DIFF_2: f32 = 0.85 * 0.85;
+
+enum UpdateResult {
+    Nothing,
+    StartedAttack,
+    CombatEnded,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Tsify)]
+pub enum AttackType {
+    Magic,
+    Melee,
+    Ranged,
+}
+impl AttackType {
+    #[must_use]
+    fn is_effective_vs(self, other: AttackType) -> bool {
+        matches!(
+            (self, other),
+            (AttackType::Magic, AttackType::Ranged)
+                | (AttackType::Melee, AttackType::Magic)
+                | (AttackType::Ranged, AttackType::Melee)
+        )
+    }
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, Tsify)]
 pub struct CombatantStats {
     pub hp: u32,
-    pub attack_speed: u32, // in centi-seconds
+    pub attack_speed: u32, // in centi-seconds (1 = 0.01s)
     pub hit_chance: f64,   // 0-1
-    pub stun_chance: f64,  // 0-1
-    pub min_damage: u32,
-    pub max_damage: u32,
+    // pub stun_chance: f64,  // 0-1
+    pub attack_type: AttackType,
+    pub damage: u32,
+    pub defense: u32,
 }
 
 #[derive(Debug)]
@@ -27,27 +61,33 @@ struct Combatant {
     getting_attacked: bool,
     attacking_timer: u32,
     stunned_timer: u32,
-    target: Option<Rc<RefCell<Combatant>>>,
+    targets: Vec<Rc<RefCell<Combatant>>>,
+    target_index: usize,
+    hit: bool,
 }
 
 impl CombatantStats {
-    fn gen_dmg(&self, rng: &mut SmallRng) -> u32 {
-        if self.min_damage == self.max_damage {
-            self.min_damage
-        } else {
-            rng.gen_range(self.min_damage..=self.max_damage)
+    #[must_use]
+    pub const fn swordsmen() -> Self {
+        CombatantStats {
+            hp: 15,
+            attack_speed: 150,
+            hit_chance: 0.8,
+            damage: 3,
+            defense: 1,
+            attack_type: AttackType::Melee,
         }
     }
 
     #[must_use]
-    pub const fn swordsmen() -> Self {
+    pub const fn ninja() -> Self {
         CombatantStats {
-            hp: 7,
-            attack_speed: 15,
-            hit_chance: 0.9,
-            stun_chance: 0.0,
-            min_damage: 2,
-            max_damage: 2,
+            hp: 15,
+            attack_speed: 75,
+            hit_chance: 0.8,
+            damage: 3,
+            defense: 1,
+            attack_type: AttackType::Ranged,
         }
     }
 
@@ -55,11 +95,23 @@ impl CombatantStats {
     pub const fn demon_lord() -> Self {
         CombatantStats {
             hp: 666,
-            attack_speed: 15,
-            hit_chance: 0.75,
-            stun_chance: 0.0,
-            min_damage: 1,
-            max_damage: 3,
+            attack_speed: 75,
+            hit_chance: 0.8,
+            damage: 6,
+            defense: 4,
+            attack_type: AttackType::Melee,
+        }
+    }
+
+    #[must_use]
+    pub const fn giant_rat() -> Self {
+        CombatantStats {
+            hp: 20,
+            attack_speed: 150,
+            hit_chance: 0.7,
+            damage: 3,
+            defense: 1,
+            attack_type: AttackType::Melee,
         }
     }
 }
@@ -73,70 +125,164 @@ impl Combatant {
             getting_attacked: false,
             attacking_timer: 0,
             stunned_timer: 0,
-            target: None,
+            targets: vec![],
+            target_index: 0,
+            hit: false,
         }
     }
 
-    fn update(&mut self, rng: &mut SmallRng, enemies: &mut Vec<Rc<RefCell<Combatant>>>) -> bool {
+    // true if dead
+    #[must_use]
+    fn damage(
+        &mut self,
+        hit: bool,
+        attack_damage: u32,
+        attack_type: AttackType,
+        rng: &mut SmallRng,
+    ) -> bool {
+        if self.hp == 0 {
+            return false;
+        }
+
+        self.stunned_timer = ATTACK_STUN_TIME;
+
+        if !hit {
+            return false;
+        }
+
+        let mut dmg = attack_damage;
+        if dmg < MAX_DMG && rng.gen::<bool>() {
+            dmg += 1;
+        }
+        if dmg > self.stats.defense {
+            dmg -= self.stats.defense;
+            if attack_type.is_effective_vs(self.stats.attack_type) {
+                dmg = ((dmg as f32) * 1.4).round() as u32;
+            }
+        } else if rng.gen::<bool>() {
+            dmg = 1;
+        } else {
+            return false;
+        };
+
+        if dmg >= self.hp {
+            self.hp = 0;
+            return true;
+        }
+
+        self.hp -= dmg;
+
+        false
+    }
+
+    fn update(
+        &mut self,
+        can_attack: bool,
+        team_index: usize,
+        team_size: usize,
+        rng: &mut SmallRng,
+        enemies: &mut Vec<Rc<RefCell<Combatant>>>,
+    ) -> UpdateResult {
         if self.stunned_timer > 0 {
-            self.stunned_timer -= 1;
+            self.stunned_timer -= TIME_STEP;
+        }
+
+        if self.attacking_timer > 0 {
+            self.attacking_timer -= TIME_STEP;
+            if self.attacking_timer == 0 {
+                return self.perform_attack(rng, enemies);
+            }
+            return UpdateResult::Nothing;
+        }
+
+        if !can_attack {
+            return UpdateResult::Nothing;
         }
 
         if self.attack_cooldown > 0 {
-            self.attack_cooldown -= 1;
+            self.attack_cooldown -= TIME_STEP;
             if self.attack_cooldown > 0 {
-                return false;
+                return UpdateResult::Nothing;
             }
-        } else if self.attacking_timer > 0 {
-            self.attacking_timer -= 1;
-            if self.attacking_timer == 0 {
-                if let Some(target) = self.target.as_deref() {
-                    target.borrow_mut().getting_attacked = false;
-                    self.target = None;
-                }
-                self.attack_cooldown = self.stats.attack_speed;
-            }
-            return false;
         }
 
-        self.attack(rng, enemies)
+        self.start_attack(team_index, team_size, rng, enemies)
     }
 
-    fn attack(&mut self, rng: &mut SmallRng, enemies: &mut Vec<Rc<RefCell<Combatant>>>) -> bool {
+    fn perform_attack(
+        &mut self,
+        rng: &mut SmallRng,
+        enemies: &mut Vec<Rc<RefCell<Combatant>>>,
+    ) -> UpdateResult {
+        if let AttackType::Melee = self.stats.attack_type {
+            if self.target_index == self.targets.len() {
+                for target in &mut self.targets {
+                    target.borrow_mut().getting_attacked = false;
+                }
+            } else {
+                let dmg = self.stats.damage;
+                let typ = self.stats.attack_type;
+                let hit = self.hit;
+                let target = &mut self.targets[self.target_index];
+                let killed = target.borrow_mut().damage(hit, dmg, typ, rng);
+                if killed && kill(enemies, target) {
+                    return UpdateResult::CombatEnded;
+                }
+                self.target_index += 1;
+                self.attacking_timer = if self.target_index == self.targets.len() {
+                    MELEE_ATTACK_WINDDOWN_TIME
+                } else {
+                    MELEE_ATTACK_WINDUP_TIME + MELEE_ATTACK_WINDDOWN_TIME
+                };
+                return UpdateResult::Nothing;
+            }
+        } else {
+            self.stunned_timer = ATTACK_STUN_TIME;
+
+            let dmg = self.stats.damage;
+            let typ = self.stats.attack_type;
+            let hit = self.hit;
+            for target in &mut self.targets {
+                let killed = {
+                    let mut target = target.borrow_mut();
+                    target.getting_attacked = false;
+                    target.damage(hit, dmg, typ, rng)
+                };
+                if killed && kill(enemies, target) {
+                    return UpdateResult::CombatEnded;
+                }
+            }
+        }
+        self.targets.clear();
+        self.attack_cooldown = self.stats.attack_speed;
+        UpdateResult::Nothing
+    }
+
+    fn start_attack(
+        &mut self,
+        team_index: usize,
+        team_size: usize,
+        rng: &mut SmallRng,
+        enemies: &mut [Rc<RefCell<Combatant>>],
+    ) -> UpdateResult {
         if self.getting_attacked || self.stunned_timer > 0 {
-            return false;
+            return UpdateResult::Nothing;
         }
 
-        let target_index = match find_target(rng, enemies) {
-            Some(target) => target,
-            None => return false,
+        let (index, target) = find_target(team_index, team_size, rng, enemies);
+        target.borrow_mut().getting_attacked = true;
+        self.targets.push(target);
+        self.target_index = 0;
+        self.hit = rng.gen_bool(self.stats.hit_chance);
+        self.attacking_timer = match self.stats.attack_type {
+            AttackType::Melee => MELEE_ATTACK_WINDUP_TIME,
+            AttackType::Magic => {
+                MAGIC_WAIT_TIME + projectile_time(team_index, team_size, index, enemies.len())
+            }
+            AttackType::Ranged => projectile_time(team_index, team_size, index, enemies.len()),
         };
 
-        let target = unsafe { enemies.get_unchecked(target_index) };
-        self.attacking_timer = ATTACK_TIME;
-
-        if rng.gen_bool(self.stats.hit_chance) {
-            let dmg = self.stats.gen_dmg(rng);
-            if target.borrow().hp <= dmg {
-                let target = enemies.swap_remove(target_index);
-                if let Some(t) = target.borrow_mut().target.as_deref() {
-                    t.borrow_mut().getting_attacked = false;
-                }
-                return enemies.is_empty();
-            }
-            self.target = Some(Rc::clone(target));
-            let mut target = target.borrow_mut();
-            target.getting_attacked = true;
-            target.hp -= dmg;
-            if self.stats.stun_chance > 0.0 && rng.gen_bool(self.stats.stun_chance) {
-                target.stunned_timer = STUN_TIME;
-            }
-            false
-        } else {
-            self.target = Some(Rc::clone(target));
-            target.borrow_mut().getting_attacked = true;
-            false
-        }
+        UpdateResult::StartedAttack
     }
 }
 
@@ -180,7 +326,7 @@ impl Display for Stats {
             .max()
             .unwrap_or(0)
             .max(self.enemy_hp.iter().copied().max().unwrap_or(0));
-        for (i, v) in self.enemy_hp.iter().enumerate().rev() {
+        for (i, v) in self.enemy_hp.iter().rev().enumerate().rev() {
             let width = (v * 300 / max_count) as usize;
             writeln!(f, "{i} {:#<width$}", "")?;
         }
@@ -207,11 +353,12 @@ pub fn simulate(
     let mut stats = Stats::new(iters, villager_setup.len());
     let total_enemy_hp: usize = enemy_setup.iter().map(|e| e.hp).sum::<u32>() as usize;
 
-    let start_time = start_time * 10;
-    let month_length = month_length * 10;
+    let start_time = start_time * 100;
+    let month_length = month_length * 100;
 
     for _ in 0..iters {
         let mut time = start_time;
+        let mut last_attack = 0;
         let mut villagers: Vec<Rc<RefCell<Combatant>>> = villager_setup
             .iter()
             .map(|s| Rc::new(RefCell::new(Combatant::new(s))))
@@ -222,8 +369,11 @@ pub fn simulate(
             .collect();
 
         'outer: loop {
-            time += 1;
+            time += TIME_STEP;
+            let mut can_attack = time - last_attack >= 30;
+
             if time > 100_000 {
+                println!("timeout");
                 break;
             }
 
@@ -234,30 +384,36 @@ pub fn simulate(
                 }
             }
 
-            for c in &villagers {
-                if c.borrow_mut().update(&mut rng, &mut enemies) {
-                    break 'outer;
-                }
-            }
-
-            for c in &enemies {
-                if c.borrow_mut().update(&mut rng, &mut villagers) {
-                    break 'outer;
-                }
-            }
-
-            for c in &villagers {
-                let mut v = c.borrow_mut();
-                if v.attack_cooldown == 0
-                    && v.attacking_timer == 0
-                    && v.attack(&mut rng, &mut enemies)
+            for (i, c) in villagers.iter().enumerate() {
+                match c
+                    .borrow_mut()
+                    .update(can_attack, i, villagers.len(), &mut rng, &mut enemies)
                 {
-                    break 'outer;
+                    UpdateResult::StartedAttack => {
+                        last_attack = time;
+                        can_attack = false;
+                    }
+                    UpdateResult::CombatEnded => break 'outer,
+                    UpdateResult::Nothing => (),
+                }
+            }
+
+            for (i, c) in enemies.iter().enumerate() {
+                match c
+                    .borrow_mut()
+                    .update(can_attack, i, enemies.len(), &mut rng, &mut villagers)
+                {
+                    UpdateResult::StartedAttack => {
+                        last_attack = time;
+                        can_attack = false;
+                    }
+                    UpdateResult::CombatEnded => break 'outer,
+                    UpdateResult::Nothing => (),
                 }
             }
         }
 
-        let length = (time - start_time) / 10;
+        let length = (time - start_time) / 100;
         stats.total_length += length as u64;
         stats.longest = stats.longest.max(length);
         if enemies.is_empty() {
@@ -274,25 +430,41 @@ pub fn simulate(
     stats
 }
 
-fn find_target(rng: &mut SmallRng, enemies: &[Rc<RefCell<Combatant>>]) -> Option<usize> {
-    let mut targets = 0;
-    for e in enemies {
-        if !e.borrow().getting_attacked {
-            targets += 1;
-        }
+fn find_target(
+    team_index: usize,
+    team_size: usize,
+    rng: &mut SmallRng,
+    enemies: &[Rc<RefCell<Combatant>>],
+) -> (usize, Rc<RefCell<Combatant>>) {
+    let num = team_size as f32;
+    let num2 = team_index as f32;
+    let num3 = enemies.len() as f32 / num;
+    let f = num2 * num3;
+    let f2 = (num2 + 1.0) * num3;
+    let min = f.floor() as usize;
+    let max = f2.ceil() as usize;
+
+    let index = rng.gen_range(min..max);
+    (index, Rc::clone(&enemies[index]))
+}
+
+fn projectile_time(
+    team_index: usize,
+    team_size: usize,
+    enemy_index: usize,
+    enemy_size: usize,
+) -> u32 {
+    let x1 = (team_index as f32) + 0.5 - (team_size as f32) / 2.0;
+    let x2 = (enemy_index as f32) + 0.5 - (enemy_size as f32) / 2.0;
+    let xd = (x1 - x2) * BATTLE_X_DIFF;
+    let dist = (xd * xd + BATTLE_Y_DIFF_2).sqrt();
+    let time = dist / PROJECTILE_SPEED * (100.0 / TIME_STEP as f32);
+    time.round() as u32 * TIME_STEP
+}
+
+fn kill(enemies: &mut Vec<Rc<RefCell<Combatant>>>, target: &mut Rc<RefCell<Combatant>>) -> bool {
+    if let Some(pos) = enemies.iter().position(|e| Rc::ptr_eq(e, target)) {
+        enemies.remove(pos);
     }
-    let mut target = match targets {
-        0 => return None,
-        1 => 0,
-        _ => rng.gen_range(0..targets),
-    };
-    for (i, e) in enemies.iter().enumerate() {
-        if !e.borrow().getting_attacked {
-            if target == 0 {
-                return Some(i);
-            }
-            target -= 1;
-        }
-    }
-    unreachable!("there should be a target");
+    enemies.is_empty()
 }
